@@ -1,17 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const UserList = () => {
+function UserList() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    fetchUsers();
+    axios.get("http://localhost:3000/users")
+      .then(res => setUsers(res.data))
+      .catch(err => console.error(err));
   }, []);
-
-  const fetchUsers = async () => {
-    const res = await axios.get("http://localhost:3000/users");
-    setUsers(res.data);
-  };
 
   return (
     <div>
@@ -23,6 +20,6 @@ const UserList = () => {
       </ul>
     </div>
   );
-};
+}
 
 export default UserList;
