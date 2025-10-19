@@ -1,32 +1,41 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
-const User = require("./models/User");
+// server.js
+const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose'); //  Thêm Mongoose để kết nối MongoDB
+const userRoutes = require('./routes/user');
 
 const app = express();
-app.use(bodyParser.json());
-
-//  Kết nối MongoDB Atlas (thay bằng chuỗi thật của bạn)
-mongoose.connect(
-  "mongodb+srv://phamtuan1914_db_user:140704Vi@cluster0.5xjsf2v.mongodb.net/groupDB?retryWrites=true&w=majority&appName=Cluster0",
-  { useNewUrlParser: true, useUnifiedTopology: true }
-)
-.then(() => console.log(" Kết nối MongoDB thành công"))
-.catch(err => console.error(" Lỗi kết nối:", err));
-
-// API: GET tất cả user
-app.get("/users", async (req, res) => {
-  const users = await User.find();
-  res.json(users);
-});
-
-// API: POST thêm user mới
-app.post("/users", async (req, res) => {
-  const { name, email } = req.body;
-  const newUser = new User({ name, email });
-  await newUser.save();
-  res.json(newUser);
-});
-
 const PORT = 3000;
-app.listen(PORT, () => console.log(` Server chạy tại http://localhost:${PORT}`));
+
+// ======================
+//  KẾT NỐI MONGODB
+// ======================
+//const MONGO_URI = 'mongodb://localhost:27017/user_management'; 
+//  Nếu bạn dùng MongoDB Atlas:
+const MONGO_URI = 'mongodb+srv://phamtuan1914_db_user:140704Vi@cluster0.5xjsf2v.mongodb.net/groupDB?retryWrites=true&w=majority&appName=Cluster0';
+
+mongoose.connect(MONGO_URI)
+  .then(() => console.log(' Đã kết nối MongoDB thành công!'))
+  .catch((err) => console.error(' Lỗi kết nối MongoDB:', err));
+
+// ======================
+//MIDDLEWARE
+// ======================
+app.use(cors());
+app.use(express.json());
+
+// ======================
+//ROUTES
+// ======================
+app.use('/users', userRoutes);
+
+app.get('/', (req, res) => {
+  res.send('Backend Node.js + Express + MongoDB đang chạy!');
+});
+
+// ======================
+// KHỞI ĐỘNG SERVER
+// ======================
+app.listen(PORT, () => {
+  console.log(` Server đang chạy tại http://localhost:${PORT}`);
+});
