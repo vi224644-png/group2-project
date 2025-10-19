@@ -1,16 +1,17 @@
 // server.js
 const express = require('express');
+const cors = require('cors');  // ✅ Thêm dòng này
 const app = express();
-const userRoutes = require('./routes/user'); // ✅ import route user
+const userRoutes = require('./routes/user');
 const PORT = 3000;
 
-// Middleware để đọc JSON từ body
+// Middleware
+app.use(cors()); // ✅ Cho phép frontend gọi API
 app.use(express.json());
 
-// Sử dụng route /users
+// Routes
 app.use('/users', userRoutes);
 
-// Route gốc
 app.get('/', (req, res) => {
   res.send('Backend Node.js + Express đang chạy!');
 });
