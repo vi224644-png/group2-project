@@ -1,6 +1,6 @@
 const User = require("../models/User");
 
-// GET /users -> lấy danh sách user từ MongoDB
+// GET /users -> Lấy danh sách user
 const getUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -10,7 +10,7 @@ const getUsers = async (req, res) => {
   }
 };
 
-// POST /users -> thêm user mới
+// POST /users -> Thêm user mới
 const addUser = async (req, res) => {
   try {
     const { name, email } = req.body;
@@ -31,4 +31,42 @@ const addUser = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, addUser };
+// PUT /users/:id -> Cập nhật user
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email } = req.body;
+
+    const updated = await User.findByIdAndUpdate(
+      id,
+      { name, email },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Không tìm thấy user" });
+    }
+
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error });
+  }
+};
+
+// DELETE /users/:id -> Xóa user
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await User.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Không tìm thấy user" });
+    }
+
+    res.status(200).json({ message: "Xóa thành công" });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error });
+  }
+};
+
+module.exports = { getUsers, addUser, updateUser, deleteUser };
