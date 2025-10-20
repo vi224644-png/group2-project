@@ -1,10 +1,18 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const userController = require('../controllers/userController');
 
-router.get('/users', userController.getUsers);
-router.post('/users', userController.addUser);
-router.put('/users/:id', userController.updateUser);
-router.delete('/users/:id', userController.deleteUser);
+// import đúng các hàm controller
+const {
+  getUsers,
+  addUser,
+  updateUser,
+  deleteUser,
+} = require("../controllers/userController");
+
+// định nghĩa route
+router.get("/", getUsers);          // Lấy tất cả user
+router.post("/", addUser);          // Thêm user mới
+router.put("/:id", updateUser);     // Cập nhật user
+router.delete("/:id", deleteUser);  // Xóa user
 
 module.exports = router;
