@@ -1,6 +1,6 @@
 const User = require("../models/User");
 
-// GET /users -> lấy danh sách user từ MongoDB
+// GET /users -> Lấy danh sách user
 const getUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -10,7 +10,7 @@ const getUsers = async (req, res) => {
   }
 };
 
-// POST /users -> thêm user mới
+// POST /users -> Thêm user mới
 const addUser = async (req, res) => {
   try {
     const { name, email } = req.body;
@@ -31,31 +31,42 @@ const addUser = async (req, res) => {
   }
 };
 
-// PUT /users/:id -> sửa user
-const updateUser = (req, res) => {
-  const { id } = req.params;
-  const { name, email } = req.body || {};
-  const index = users.findIndex(u => u.id == id);
+// PUT /users/:id -> Cập nhật user
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email } = req.body;
 
-  if (index === -1) {
-    return res.status(404).json({ message: 'User không tồn tại' });
+    const updated = await User.findByIdAndUpdate(
+      id,
+      { name, email },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Không tìm thấy user" });
+    }
+
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error });
   }
-
-  // Nếu có email mới, kiểm tra trùng
-  if (email && users.some(u => u.email === email && u.id != id)) {
-    return res.status(409).json({ message: 'Email đã tồn tại' });
-  }
-
-  users[index] = { ...users[index], ...req.body };
-  return res.status(200).json(users[index]);
 };
 
-// DELETE /users/:id -> xóa user
-const deleteUser = (req, res) => {
-  const { id } = req.params;
-  const existed = users.some(u => u.id == id);
-  if (!existed) {
-    return res.status(404).json({ message: 'User không tồn tại' });
+// DELETE /users/:id -> Xóa user
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await User.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Không tìm thấy user" });
+    }
+
+    res.status(200).json({ message: "Xóa thành công" });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error });
   }
-  users = users.filter(u => u.id != id);
-  return res.status(200).json({ message: 'User
+};
+
+module.exports = { getUsers, addUser, updateUser, deleteUser };
