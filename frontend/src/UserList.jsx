@@ -20,15 +20,15 @@ function UserList() {
   };
 
   // ✅ XÓA user (cập nhật giao diện ngay)
-  const handleDelete = async (id) => {
-    try {
-      const res = await axios.delete(`http://localhost:3000/users/${id}`);
-      setUsers((prevUsers) => prevUsers.filter((u) => u.id !== id));
-      console.log(res.data.message);
-    } catch (err) {
-      console.error("Lỗi khi xóa:", err);
-    }
-  };
+const handleDelete = async (id) => {
+  try {
+    const res = await axios.delete(`http://localhost:3000/users/${id}`);
+    setUsers((prevUsers) => prevUsers.filter((u) => u._id !== id));
+    console.log(res.data.message);
+  } catch (err) {
+    console.error("Lỗi khi xóa:", err);
+  }
+};
 
   // ✅ Bắt đầu sửa
   const handleEdit = (user) => {
@@ -46,7 +46,7 @@ function UserList() {
 
       // Cập nhật ngay giao diện không cần reload
       setUsers((prevUsers) =>
-        prevUsers.map((u) => (u.id === editUser.id ? res.data : u))
+        prevUsers.map((u) => (u.id === editUser._id ? res.data : u))
       );
 
       setEditUser(null);
@@ -71,7 +71,7 @@ function UserList() {
                 </button>
                 <button
                   style={styles.deleteBtn}
-                  onClick={() => handleDelete(user.id)}
+                  onClick={() => handleDelete(user._id)}
                 >
                    Xóa
                 </button>
