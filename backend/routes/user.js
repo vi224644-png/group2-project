@@ -1,12 +1,10 @@
-// routes/user.js
 const express = require('express');
 const router = express.Router();
-const { getUsers, addUser } = require('../controllers/userController');
+const userController = require('../controllers/userController');
 
-// GET /users -> Lấy danh sách user
-router.get('/', getUsers);
-
-// POST /users -> Thêm user mới
-router.post('/', addUser);
+router.get('/users', userController.getUsers);
+router.post('/users', userController.addUser);
+router.put('/users/:id', userController.updateUser);
+router.delete('/users/:id', userController.deleteUser);
 
 module.exports = router;

@@ -31,4 +31,31 @@ const addUser = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, addUser };
+// PUT /users/:id -> sửa user
+const updateUser = (req, res) => {
+  const { id } = req.params;
+  const { name, email } = req.body || {};
+  const index = users.findIndex(u => u.id == id);
+
+  if (index === -1) {
+    return res.status(404).json({ message: 'User không tồn tại' });
+  }
+
+  // Nếu có email mới, kiểm tra trùng
+  if (email && users.some(u => u.email === email && u.id != id)) {
+    return res.status(409).json({ message: 'Email đã tồn tại' });
+  }
+
+  users[index] = { ...users[index], ...req.body };
+  return res.status(200).json(users[index]);
+};
+
+// DELETE /users/:id -> xóa user
+const deleteUser = (req, res) => {
+  const { id } = req.params;
+  const existed = users.some(u => u.id == id);
+  if (!existed) {
+    return res.status(404).json({ message: 'User không tồn tại' });
+  }
+  users = users.filter(u => u.id != id);
+  return res.status(200).json({ message: 'User
