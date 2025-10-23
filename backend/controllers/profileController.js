@@ -1,27 +1,39 @@
 const User = require("../models/User");
+const bcrypt = require("bcryptjs");
 
-// Xem thông tin cá nhân
+// ✅ Xem thông tin cá nhân (GET /api/profile/:id)
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const { id } = req.params; // lấy id từ URL
+    const user = await User.findById(id).select("-password");
     if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
     res.json(user);
   } catch (error) {
+    console.error("❌ Lỗi getProfile:", error);
     res.status(500).json({ message: "Lỗi server!", error });
   }
 };
 
-// Cập nhật thông tin cá nhân
+// ✅ Cập nhật thông tin cá nhân (PUT /api/profile/:id)
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, email } = req.body;
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user.id,
-      { name, email },
-      { new: true }
-    ).select("-password");
-    res.json({ message: "Cập nhật thành công!", updatedUser });
+    const { id } = req.params;
+    const { name, email, password, avatar } = req.body;
+
+    const updateData = { name, email, avatar };
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true })
+      .select("-password");
+
+    if (!updatedUser)
+      return res.status(404).json({ message: "Không tìm thấy người dùng!" });
+
+    res.json({ message: "✅ Cập nhật thành công!", updatedUser });
   } catch (error) {
+    console.error("❌ Lỗi updateProfile:", error);
     res.status(500).json({ message: "Lỗi server!", error });
   }
 };
