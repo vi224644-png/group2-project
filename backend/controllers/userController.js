@@ -13,9 +13,9 @@ const getUsers = async (req, res) => {
 // POST /users -> thêm user mới
 const addUser = async (req, res) => {
   try {
-    const { name, email } = req.body;
-    if (!name || !email) {
-      return res.status(400).json({ message: "Vui lòng nhập đủ name và email" });
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Vui lòng nhập đủ name, email" });
     }
 
     const existed = await User.findOne({ email });
@@ -23,8 +23,9 @@ const addUser = async (req, res) => {
       return res.status(409).json({ message: "Email đã tồn tại" });
     }
 
-    const newUser = new User({ name, email });
+    const newUser = new User({ name, email, password });
     await newUser.save();
+
     res.status(201).json(newUser);
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error });

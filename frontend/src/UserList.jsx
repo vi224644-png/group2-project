@@ -46,7 +46,7 @@ const handleDelete = async (id) => {
 
       // Cập nhật ngay giao diện không cần reload
       setUsers((prevUsers) =>
-        prevUsers.map((u) => (u.id === editUser._id ? res.data : u))
+        prevUsers.map((u) => (u._id === editUser._id ? res.data : u))
       );
 
       setEditUser(null);
@@ -62,7 +62,7 @@ const handleDelete = async (id) => {
       <div style={styles.cardContainer}>
         {users.length > 0 ? (
           users.map((user) => (
-            <div key={user.id} style={styles.card}>
+            <div key={user._id} style={styles.card}>
               <h3 style={styles.name}>{user.name}</h3>
               <p style={styles.email}>{user.email}</p>
               <div style={styles.actions}>
