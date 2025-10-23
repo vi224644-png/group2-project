@@ -11,13 +11,17 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:3000/login", {
+      const res = await axios.post("http://localhost:3000/api/auth/login", {
         email,
         password,
       });
-      setMessage("✅ Đăng nhập thành công!");
-      console.log(res.data);
-      setTimeout(() => navigate("/dashboard"), 1000);
+
+      // Lưu token JWT
+      localStorage.setItem("token", res.data.token);
+
+      // Thông báo thành công
+      setMessage(res.data.message);
+      setTimeout(() => navigate("/dashboard"), 1000); // Redirect sau 1s
     } catch (err) {
       setMessage(err.response?.data?.message || "❌ Lỗi đăng nhập");
     }
@@ -52,7 +56,15 @@ function Login() {
           </button>
         </form>
 
-        {message && <p style={styles.message}>{message}</p>}
+        {message && (
+          <p style={{ 
+            color: message.includes("thành công") ? "#16a34a" : "#e74c3c",
+            fontSize: "14px",
+            marginTop: "10px"
+          }}>
+            {message}
+          </p>
+        )}
 
         <p style={styles.footerText}>
           Chưa có tài khoản?{" "}
@@ -62,7 +74,6 @@ function Login() {
         </p>
       </div>
 
-      {/* CSS nội bộ để thêm hover / focus */}
       <style>{`
         .input-field {
           width: 100%;
@@ -126,11 +137,6 @@ const styles = {
     fontSize: "26px",
     fontWeight: "600",
     color: "#333",
-  },
-  message: {
-    color: "#e74c3c",
-    fontSize: "14px",
-    marginTop: "10px",
   },
   footerText: {
     marginTop: "20px",

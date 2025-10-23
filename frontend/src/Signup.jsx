@@ -10,7 +10,12 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:3000/signup", form);
+      axios.post("http://localhost:3000/api/auth/signup", {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+      });
+      ;
       setMessage("✅ Đăng ký thành công!");
       setTimeout(() => navigate("/"), 1000);
     } catch (err) {

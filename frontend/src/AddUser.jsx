@@ -22,7 +22,11 @@ function AddUser({ onAdd }) {
 
     setLoading(true);
     try {
-      await axios.post("http://localhost:3000/users", { name, email });
+      await axios.post("http://localhost:3000/users", { 
+        name, 
+        email, 
+        password: "123456"   // thêm dòng này
+      });
       setName("");
       setEmail("");
       setErrors({});
