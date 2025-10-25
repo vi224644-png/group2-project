@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-function Login() {
+function Login({ setCurrentUser }) { // nhận props setCurrentUser
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -16,12 +16,25 @@ function Login() {
         password,
       });
 
-      // Lưu token JWT
+      // Lưu token
       localStorage.setItem("token", res.data.token);
 
-      // Thông báo thành công
+      // Lưu user
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      // Cập nhật currentUser trong App
+      setCurrentUser(res.data.user);
+
       setMessage(res.data.message);
-      setTimeout(() => navigate("/profile"), 1000); // Redirect sau 1s
+
+      // Điều hướng
+      setTimeout(() => {
+        if (res.data.user.role === "admin") {
+          navigate("/dashboard");
+        } else {
+          navigate("/profile");
+        }
+      }, 500);
     } catch (err) {
       setMessage(err.response?.data?.message || "❌ Lỗi đăng nhập");
     }
@@ -57,11 +70,13 @@ function Login() {
         </form>
 
         {message && (
-          <p style={{ 
-            color: message.includes("thành công") ? "#16a34a" : "#e74c3c",
-            fontSize: "14px",
-            marginTop: "10px"
-          }}>
+          <p
+            style={{
+              color: message.includes("thành công") ? "#16a34a" : "#e74c3c",
+              fontSize: "14px",
+              marginTop: "10px",
+            }}
+          >
             {message}
           </p>
         )}

@@ -89,4 +89,5 @@ router.put('/', verifyToken, upload.single('avatar'), async (req, res) => {
   }
 });
 
+
 module.exports = router;
