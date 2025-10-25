@@ -82,7 +82,7 @@ router.put('/', verifyToken, upload.single('avatar'), async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
     }
 
-    res.json({ message: '✅ Cập nhật thành công!', updatedUser });
+    res.json({ message: 'Cập nhật thành công!', updatedUser });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Lỗi server', error });
