@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-//Middleware xác thực token (bắt buộc login)
+// Middleware xác thực token (bắt buộc login)
 const authenticate = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
@@ -17,7 +17,7 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-//Middleware kiểm tra quyền (Admin/User)
+// Middleware kiểm tra quyền (Admin/User)
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -27,4 +27,5 @@ const authorize = (...roles) => {
   };
 };
 
+// 🟢 Export lại cả 2 function
 module.exports = { authenticate, authorize };
