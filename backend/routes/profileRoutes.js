@@ -8,15 +8,9 @@ const path = require('path');
 
 // ================== CẤU HÌNH LƯU ẢNH ==================
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // lưu vào thư mục /uploads
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + '-' + file.originalname;
-    cb(null, uniqueName);
-  },
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
 });
-
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
@@ -38,11 +32,11 @@ const verifyToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(401).json({ message: 'Token không hợp lệ!' });
+    res.status(401).json({ message: 'Token không hợp lệ!' });
   }
 };
 
-// ================== LẤY THÔNG TIN PROFILE ==================
+// ================== LẤY PROFILE ==================
 router.get('/', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
@@ -62,32 +56,33 @@ router.put('/', verifyToken, upload.single('avatar'), async (req, res) => {
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (password) updateData.password = await bcrypt.hash(password, 10);
-    if (req.file) {
-      updateData.avatar = `/uploads/${req.file.filename}`;
-    }
+    if (req.file) updateData.avatar = `/uploads/${req.file.filename}`;
 
-    // Kiểm tra email trùng lặp (ngoại trừ chính người dùng đó)
     if (email) {
       const existed = await User.findOne({ email, _id: { $ne: req.user.id } });
-      if (existed) {
-        return res.status(400).json({ message: 'Email đã được sử dụng!' });
-      }
+      if (existed) return res.status(400).json({ message: 'Email đã được sử dụng!' });
     }
 
     const updatedUser = await User.findByIdAndUpdate(req.user.id, updateData, {
       new: true,
     }).select('-password');
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
-    }
-
+    if (!updatedUser) return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
     res.json({ message: '✅ Cập nhật thành công!', updatedUser });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: 'Lỗi server', error });
   }
 });
 
+// ================== XOÁ TÀI KHOẢN ==================
+router.delete('/', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.user.id);
+    if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
+    res.json({ message: '🗑️ Tài khoản đã bị xóa!' });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi khi xóa tài khoản', error });
+  }
+});
 
 module.exports = router;

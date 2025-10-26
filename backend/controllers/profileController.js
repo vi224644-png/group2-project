@@ -40,7 +40,7 @@ exports.updateProfile = async (req, res) => {
 // DELETE /api/profile
 const deleteProfile = async (req, res) => {
   try {
-    await User.findByIdAndDelete(req.user.id);
+    await User.findByIdAndDelete(req.user.id || req.user._id);
     res.status(200).json({ message: "Tài khoản đã bị xóa" });
   } catch (error) {
     res.status(500).json({ message: "Lỗi khi xóa tài khoản", error });
