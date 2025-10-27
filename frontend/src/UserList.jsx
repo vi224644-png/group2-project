@@ -35,13 +35,13 @@ function UserList() {
     }
   };
 
-  // ✅ Bắt đầu sửa
+  // Bắt đầu sửa
   const handleEdit = (user) => {
     setEditUser(user);
     setForm({ name: user.name, email: user.email });
   };
 
-  // ✅ Lưu cập nhật
+  // Lưu cập nhật
   const handleUpdate = async () => {
     try {
       const res = await axios.put(`http://localhost:3000/users/${editUser._id}`, form);
@@ -50,7 +50,6 @@ function UserList() {
       setUsers((prevUsers) =>
         prevUsers.map((u) => (u._id === editUser._id ? res.data : u))
       );
-
       setEditUser(null);
     } catch (err) {
       console.error("Cập nhật lỗi:", err);
@@ -78,8 +77,7 @@ function UserList() {
                   Xóa
                 </button>
               </div>
-            </div>
-          ))
+            ))
         ) : (
           <p style={{ textAlign: "center" }}>Không có người dùng nào.</p>
         )}
@@ -117,16 +115,8 @@ function UserList() {
 }
 
 const styles = {
-  container: {
-    padding: "30px",
-    maxWidth: "900px",
-    margin: "auto",
-  },
-  title: {
-    textAlign: "center",
-    color: "#34495e",
-    marginBottom: "25px",
-  },
+  container: { padding: "30px", maxWidth: "900px", margin: "auto" },
+  title: { textAlign: "center", color: "#34495e", marginBottom: "25px" },
   cardContainer: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
@@ -138,19 +128,9 @@ const styles = {
     padding: "20px",
     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
   },
-  name: {
-    color: "#2c3e50",
-    marginBottom: "5px",
-  },
-  email: {
-    color: "#7f8c8d",
-    fontSize: "14px",
-  },
-  actions: {
-    marginTop: "10px",
-    display: "flex",
-    justifyContent: "space-between",
-  },
+  name: { color: "#2c3e50", marginBottom: "5px" },
+  email: { color: "#7f8c8d", fontSize: "14px" },
+  actions: { marginTop: "10px", display: "flex", justifyContent: "space-between" },
   editBtn: {
     backgroundColor: "#f1c40f",
     border: "none",
@@ -177,10 +157,7 @@ const styles = {
     boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
     textAlign: "center",
   },
-  formTitle: {
-    color: "#2c3e50",
-    marginBottom: "15px",
-  },
+  formTitle: { color: "#2c3e50", marginBottom: "15px" },
   input: {
     display: "block",
     width: "100%",
