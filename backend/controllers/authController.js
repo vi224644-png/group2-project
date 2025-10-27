@@ -5,12 +5,23 @@ const jwt = require("jsonwebtoken");
 // Đăng ký
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
+
     const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "Email đã tồn tại!" });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email đã tồn tại!" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ name, email, password: hashedPassword });
+
+    //Cho phép nhận role từ body, mặc định là "user"
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role: role || "user",
+    });
+
     await newUser.save();
 
     res.status(201).json({ message: "Đăng ký thành công!", user: newUser });
