@@ -1,7 +1,6 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
-const cloudinary = require("../config/cloudinary");
 
 //Lấy danh sách user (chỉ Admin được phép)
 const getUsers = async (req, res) => {
@@ -18,7 +17,7 @@ const addUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "Vui lòng nhập đủ thông tin" });
+      return res.status(400).json({ message: "Vui lòng nhập đủ name, email, password" });
     }
 
     // Kiểm tra trùng email
@@ -27,9 +26,10 @@ const addUser = async (req, res) => {
       return res.status(409).json({ message: "Email đã tồn tại" });
     }
 
+    // ✅ Hash password trước khi lưu
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({ name, email, password: hashedPassword, role });
+    const newUser = new User({ name, email, password: hashedPassword });
     await newUser.save();
 
     res.status(201).json({

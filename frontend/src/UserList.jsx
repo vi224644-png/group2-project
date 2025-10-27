@@ -19,8 +19,13 @@ function UserList() {
     }
   };
 
-  // Xóa user
+  // ✅ XÓA user với xác nhận trước
   const handleDelete = async (id) => {
+    const confirmDelete = window.confirm(
+      "⚠️ Bạn có chắc chắn muốn xóa user này? Hành động này không thể hoàn tác!"
+    );
+    if (!confirmDelete) return;
+
     try {
       const res = await axios.delete(`http://localhost:3000/users/${id}`);
       setUsers((prevUsers) => prevUsers.filter((u) => u._id !== id));
@@ -39,10 +44,9 @@ function UserList() {
   // Lưu cập nhật
   const handleUpdate = async () => {
     try {
-      const res = await axios.put(
-        `http://localhost:3000/users/${editUser._id}`,
-        form
-      );
+      const res = await axios.put(`http://localhost:3000/users/${editUser._id}`, form);
+
+      // Cập nhật ngay giao diện không cần reload
       setUsers((prevUsers) =>
         prevUsers.map((u) => (u._id === editUser._id ? res.data : u))
       );
@@ -52,29 +56,26 @@ function UserList() {
     }
   };
 
+  // ✅ Chỉ hiển thị user không phải admin
+  const visibleUsers = users.filter((u) => u.role !== "admin");
+
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>👥 Danh sách người dùng</h2>
 
       <div style={styles.cardContainer}>
-        {users.length > 0 ? (
-          users
-            .filter((user) => user.role !== "admin") // ẩn user admin
-            .map((user) => (
-              <div key={user._id} style={styles.card}>
-                <h3 style={styles.name}>{user.name}</h3>
-                <p style={styles.email}>{user.email}</p>
-                <div style={styles.actions}>
-                  <button style={styles.editBtn} onClick={() => handleEdit(user)}>
-                    Sửa
-                  </button>
-                  <button
-                    style={styles.deleteBtn}
-                    onClick={() => handleDelete(user._id)}
-                  >
-                    Xóa
-                  </button>
-                </div>
+        {visibleUsers.length > 0 ? (
+          visibleUsers.map((user) => (
+            <div key={user._id} style={styles.card}>
+              <h3 style={styles.name}>{user.name}</h3>
+              <p style={styles.email}>{user.email}</p>
+              <div style={styles.actions}>
+                <button style={styles.editBtn} onClick={() => handleEdit(user)}>
+                  Sửa
+                </button>
+                <button style={styles.deleteBtn} onClick={() => handleDelete(user._id)}>
+                  Xóa
+                </button>
               </div>
             ))
         ) : (

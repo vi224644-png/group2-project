@@ -3,9 +3,9 @@ const router = express.Router();
 
 const upload = require("../middleware/upload");
 const { uploadAvatar } = require("../controllers/uploadController");
-const { authenticate } = require("../middleware/auth"); // ✅ Lấy đúng hàm cần dùng
+const { verifyToken } = require("../middleware/auth"); // ✅ Đổi lại
 
-// ✅ Chỉ dùng authenticate (vì chỉ cần xác thực token)
-router.post("/avatar", authenticate, upload.single("avatar"), uploadAvatar);
+// ✅ Chỉ cần xác thực token trước khi upload
+router.post("/upload-avatar", verifyToken, upload.single("avatar"), uploadAvatar);
 
 module.exports = router;

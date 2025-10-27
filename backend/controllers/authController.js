@@ -65,7 +65,6 @@ exports.login = async (req, res) => {
    🔹 ĐĂNG XUẤT (LOGOUT)
   res.status(200).json({ message: "Đăng xuất thành công!" });
 };
-
 /* =============================
    🔹 QUÊN MẬT KHẨU
 ============================= */
@@ -115,3 +114,4 @@ exports.resetPassword = async (req, res) => {
     res.status(400).json({ message: "Token không hợp lệ hoặc đã hết hạn!", error: err.message });
   }
 };
+
