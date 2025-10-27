@@ -4,6 +4,7 @@ import Login from "./Login";
 import Signup from "./Signup";
 import UserList from "./UserList";
 import AddUser from "./AddUser";
+import Profile from "./ProfileUser";
 
 function App() {
   const [refresh, setRefresh] = useState(false);
@@ -23,6 +24,9 @@ function App() {
 
       {/* Trang đăng ký */}
       <Route path="/signup" element={<Signup />} />
+
+      {/* Trang profile người dùng */}
+      <Route path="/profile" element={<Profile />} />
 
       {/* Trang dashboard */}
       <Route

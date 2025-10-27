@@ -10,13 +10,15 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      axios.post("http://localhost:3000/api/auth/signup", {
+      // ✅ Phải có await
+      await axios.post("http://localhost:3000/api/auth/signup", {
         name: form.name,
         email: form.email,
         password: form.password,
       });
-      ;
+
       setMessage("✅ Đăng ký thành công!");
+      // Chờ 1s rồi chuyển trang
       setTimeout(() => navigate("/"), 1000);
     } catch (err) {
       setMessage(err.response?.data?.message || "❌ Lỗi đăng ký");
@@ -67,7 +69,6 @@ function Signup() {
         </p>
       </div>
 
-      {/* CSS nội bộ để thêm hiệu ứng hover / focus */}
       <style>{`
         .input-field {
           width: 100%;

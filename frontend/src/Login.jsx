@@ -21,7 +21,7 @@ function Login() {
 
       // Thông báo thành công
       setMessage(res.data.message);
-      setTimeout(() => navigate("/dashboard"), 1000); // Redirect sau 1s
+      setTimeout(() => navigate("/profile"), 1000); // Redirect sau 1s
     } catch (err) {
       setMessage(err.response?.data?.message || "❌ Lỗi đăng nhập");
     }
