@@ -19,16 +19,21 @@ function UserList() {
     }
   };
 
-  // ✅ XÓA user (cập nhật giao diện ngay)
-const handleDelete = async (id) => {
-  try {
-    const res = await axios.delete(`http://localhost:3000/users/${id}`);
-    setUsers((prevUsers) => prevUsers.filter((u) => u._id !== id));
-    console.log(res.data.message);
-  } catch (err) {
-    console.error("Lỗi khi xóa:", err);
-  }
-};
+  // ✅ XÓA user với xác nhận trước
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm(
+      "⚠️ Bạn có chắc chắn muốn xóa user này? Hành động này không thể hoàn tác!"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const res = await axios.delete(`http://localhost:3000/users/${id}`);
+      setUsers((prevUsers) => prevUsers.filter((u) => u._id !== id));
+      console.log(res.data.message);
+    } catch (err) {
+      console.error("Lỗi khi xóa:", err);
+    }
+  };
 
   // ✅ Bắt đầu sửa
   const handleEdit = (user) => {
@@ -39,10 +44,7 @@ const handleDelete = async (id) => {
   // ✅ Lưu cập nhật
   const handleUpdate = async () => {
     try {
-      const res = await axios.put(
-        `http://localhost:3000/users/${editUser._id}`,
-        form
-      );
+      const res = await axios.put(`http://localhost:3000/users/${editUser._id}`, form);
 
       // Cập nhật ngay giao diện không cần reload
       setUsers((prevUsers) =>
@@ -55,25 +57,25 @@ const handleDelete = async (id) => {
     }
   };
 
+  // ✅ Chỉ hiển thị user không phải admin
+  const visibleUsers = users.filter((u) => u.role !== "admin");
+
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>👥 Danh sách người dùng</h2>
 
       <div style={styles.cardContainer}>
-        {users.length > 0 ? (
-          users.map((user) => (
+        {visibleUsers.length > 0 ? (
+          visibleUsers.map((user) => (
             <div key={user._id} style={styles.card}>
               <h3 style={styles.name}>{user.name}</h3>
               <p style={styles.email}>{user.email}</p>
               <div style={styles.actions}>
                 <button style={styles.editBtn} onClick={() => handleEdit(user)}>
-                   Sửa
+                  Sửa
                 </button>
-                <button
-                  style={styles.deleteBtn}
-                  onClick={() => handleDelete(user._id)}
-                >
-                   Xóa
+                <button style={styles.deleteBtn} onClick={() => handleDelete(user._id)}>
+                  Xóa
                 </button>
               </div>
             </div>
@@ -85,7 +87,7 @@ const handleDelete = async (id) => {
 
       {editUser && (
         <div style={styles.editForm}>
-          <h3 style={styles.formTitle}>✏️ Chỉnh sửa người dùng</h3>
+          <h3 style={styles.formTitle}> Chỉnh sửa người dùng</h3>
           <input
             style={styles.input}
             type="text"
@@ -102,13 +104,10 @@ const handleDelete = async (id) => {
           />
           <div>
             <button style={styles.saveBtn} onClick={handleUpdate}>
-              💾 Lưu
+              Lưu
             </button>
-            <button
-              style={styles.cancelBtn}
-              onClick={() => setEditUser(null)}
-            >
-              ❌ Hủy
+            <button style={styles.cancelBtn} onClick={() => setEditUser(null)}>
+              Hủy
             </button>
           </div>
         </div>

@@ -88,6 +88,20 @@ router.put('/', verifyToken, upload.single('avatar'), async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error });
   }
 });
+// ================== XÓA TÀI KHOẢN ==================
+router.delete('/', verifyToken, async (req, res) => {
+  try {
+    const deletedUser = await User.findByIdAndDelete(req.user.id);
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
+    }
+
+    res.status(200).json({ message: '✅ Tài khoản đã bị xóa!' });
+  } catch (error) {
+    console.error('Lỗi khi xóa tài khoản:', error);
+    res.status(500).json({ message: 'Lỗi server', error });
+  }
+});
 
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const bcrypt = require("bcryptjs");
 
 // GET /users -> lấy danh sách user từ MongoDB
 const getUsers = async (req, res) => {
@@ -15,7 +16,7 @@ const addUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "Vui lòng nhập đủ name, email" });
+      return res.status(400).json({ message: "Vui lòng nhập đủ name, email, password" });
     }
 
     const existed = await User.findOne({ email });
@@ -23,7 +24,10 @@ const addUser = async (req, res) => {
       return res.status(409).json({ message: "Email đã tồn tại" });
     }
 
-    const newUser = new User({ name, email, password });
+    // ✅ Hash password trước khi lưu
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({ name, email, password: hashedPassword });
     await newUser.save();
 
     res.status(201).json(newUser);

@@ -5,6 +5,9 @@ import Signup from "./Signup";
 import UserList from "./UserList";
 import AddUser from "./AddUser";
 import Profile from "./ProfileUser";
+import ForgotPassword from "./ForgotPassword";
+import ResetPassword from "./ResetPassword";
+import UploadAvatar from "./UploadAvatar";
 import { jwtDecode } from "jwt-decode"; // ✅ named import
 
 function App() {
@@ -47,6 +50,11 @@ function App() {
       <Route path="/" element={<Login setCurrentUser={setCurrentUser} />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/profile" element={<Profile currentUser={currentUser} />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/upload-avatar" element={<UploadAvatar />} />
+
 
       <Route
         path="/dashboard"
