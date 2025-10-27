@@ -28,7 +28,6 @@ exports.signup = async (req, res) => {
 
 /* =============================
    🔹 ĐĂNG NHẬP (LOGIN)
-============================= */
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -45,7 +44,18 @@ exports.login = async (req, res) => {
       expiresIn: "1h",
     });
 
-    res.status(200).json({ message: "Đăng nhập thành công!", token });
+
+    // Trả về dữ liệu kèm role
+    res.status(200).json({
+      message: "Đăng nhập thành công!",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
@@ -53,8 +63,6 @@ exports.login = async (req, res) => {
 
 /* =============================
    🔹 ĐĂNG XUẤT (LOGOUT)
-============================= */
-exports.logout = async (req, res) => {
   res.status(200).json({ message: "Đăng xuất thành công!" });
 };
 

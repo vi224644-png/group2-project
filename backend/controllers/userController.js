@@ -1,3 +1,4 @@
+const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const cloudinary = require("../config/cloudinary");
@@ -20,6 +21,7 @@ const addUser = async (req, res) => {
       return res.status(400).json({ message: "Vui lòng nhập đủ thông tin" });
     }
 
+    // Kiểm tra trùng email
     const existed = await User.findOne({ email });
     if (existed) {
       return res.status(409).json({ message: "Email đã tồn tại" });
@@ -35,6 +37,7 @@ const addUser = async (req, res) => {
       user: { ...newUser._doc, password: undefined },
     });
   } catch (error) {
+    console.error("❌ Lỗi addUser:", error);
     res.status(500).json({ message: "Lỗi server", error });
   }
 };

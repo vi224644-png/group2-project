@@ -60,4 +60,15 @@ router.post('/upload-avatar', verifyToken, upload.single('avatar'), async (req, 
   }
 });
 
+// ================== XOÁ TÀI KHOẢN ==================
+router.delete('/', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.user.id);
+    if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
+    res.json({ message: '🗑️ Tài khoản đã bị xóa!' });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi khi xóa tài khoản', error });
+  }
+});
+
 module.exports = router;

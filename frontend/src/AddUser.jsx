@@ -57,13 +57,15 @@ function AddUser({ onAdd }) {
     },
     input: {
       width: "100%",
-      padding: "14px 16px",
-      marginBottom: "5px",
+      height: "48px", // ✅ cùng chiều cao với nút
+      padding: "0 16px",
+      marginBottom: "10px",
       borderRadius: "12px",
       border: "1px solid #d1d5db",
       fontSize: "15px",
       outline: "none",
       transition: "border 0.2s ease",
+      boxSizing: "border-box",
     },
     inputError: {
       border: "1px solid #ef4444",

@@ -19,36 +19,33 @@ function UserList() {
     }
   };
 
-  // ✅ XÓA user (cập nhật giao diện ngay)
-const handleDelete = async (id) => {
-  try {
-    const res = await axios.delete(`http://localhost:3000/users/${id}`);
-    setUsers((prevUsers) => prevUsers.filter((u) => u._id !== id));
-    console.log(res.data.message);
-  } catch (err) {
-    console.error("Lỗi khi xóa:", err);
-  }
-};
+  // Xóa user
+  const handleDelete = async (id) => {
+    try {
+      const res = await axios.delete(`http://localhost:3000/users/${id}`);
+      setUsers((prevUsers) => prevUsers.filter((u) => u._id !== id));
+      console.log(res.data.message);
+    } catch (err) {
+      console.error("Lỗi khi xóa:", err);
+    }
+  };
 
-  // ✅ Bắt đầu sửa
+  // Bắt đầu sửa
   const handleEdit = (user) => {
     setEditUser(user);
     setForm({ name: user.name, email: user.email });
   };
 
-  // ✅ Lưu cập nhật
+  // Lưu cập nhật
   const handleUpdate = async () => {
     try {
       const res = await axios.put(
         `http://localhost:3000/users/${editUser._id}`,
         form
       );
-
-      // Cập nhật ngay giao diện không cần reload
       setUsers((prevUsers) =>
         prevUsers.map((u) => (u._id === editUser._id ? res.data : u))
       );
-
       setEditUser(null);
     } catch (err) {
       console.error("Cập nhật lỗi:", err);
@@ -61,23 +58,25 @@ const handleDelete = async (id) => {
 
       <div style={styles.cardContainer}>
         {users.length > 0 ? (
-          users.map((user) => (
-            <div key={user._id} style={styles.card}>
-              <h3 style={styles.name}>{user.name}</h3>
-              <p style={styles.email}>{user.email}</p>
-              <div style={styles.actions}>
-                <button style={styles.editBtn} onClick={() => handleEdit(user)}>
-                   Sửa
-                </button>
-                <button
-                  style={styles.deleteBtn}
-                  onClick={() => handleDelete(user._id)}
-                >
-                   Xóa
-                </button>
+          users
+            .filter((user) => user.role !== "admin") // ẩn user admin
+            .map((user) => (
+              <div key={user._id} style={styles.card}>
+                <h3 style={styles.name}>{user.name}</h3>
+                <p style={styles.email}>{user.email}</p>
+                <div style={styles.actions}>
+                  <button style={styles.editBtn} onClick={() => handleEdit(user)}>
+                    Sửa
+                  </button>
+                  <button
+                    style={styles.deleteBtn}
+                    onClick={() => handleDelete(user._id)}
+                  >
+                    Xóa
+                  </button>
+                </div>
               </div>
-            </div>
-          ))
+            ))
         ) : (
           <p style={{ textAlign: "center" }}>Không có người dùng nào.</p>
         )}
@@ -85,7 +84,7 @@ const handleDelete = async (id) => {
 
       {editUser && (
         <div style={styles.editForm}>
-          <h3 style={styles.formTitle}>✏️ Chỉnh sửa người dùng</h3>
+          <h3 style={styles.formTitle}> Chỉnh sửa người dùng</h3>
           <input
             style={styles.input}
             type="text"
@@ -102,13 +101,10 @@ const handleDelete = async (id) => {
           />
           <div>
             <button style={styles.saveBtn} onClick={handleUpdate}>
-              💾 Lưu
+              Lưu
             </button>
-            <button
-              style={styles.cancelBtn}
-              onClick={() => setEditUser(null)}
-            >
-              ❌ Hủy
+            <button style={styles.cancelBtn} onClick={() => setEditUser(null)}>
+              Hủy
             </button>
           </div>
         </div>
@@ -118,16 +114,8 @@ const handleDelete = async (id) => {
 }
 
 const styles = {
-  container: {
-    padding: "30px",
-    maxWidth: "900px",
-    margin: "auto",
-  },
-  title: {
-    textAlign: "center",
-    color: "#34495e",
-    marginBottom: "25px",
-  },
+  container: { padding: "30px", maxWidth: "900px", margin: "auto" },
+  title: { textAlign: "center", color: "#34495e", marginBottom: "25px" },
   cardContainer: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
@@ -139,19 +127,9 @@ const styles = {
     padding: "20px",
     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
   },
-  name: {
-    color: "#2c3e50",
-    marginBottom: "5px",
-  },
-  email: {
-    color: "#7f8c8d",
-    fontSize: "14px",
-  },
-  actions: {
-    marginTop: "10px",
-    display: "flex",
-    justifyContent: "space-between",
-  },
+  name: { color: "#2c3e50", marginBottom: "5px" },
+  email: { color: "#7f8c8d", fontSize: "14px" },
+  actions: { marginTop: "10px", display: "flex", justifyContent: "space-between" },
   editBtn: {
     backgroundColor: "#f1c40f",
     border: "none",
@@ -178,10 +156,7 @@ const styles = {
     boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
     textAlign: "center",
   },
-  formTitle: {
-    color: "#2c3e50",
-    marginBottom: "15px",
-  },
+  formTitle: { color: "#2c3e50", marginBottom: "15px" },
   input: {
     display: "block",
     width: "100%",

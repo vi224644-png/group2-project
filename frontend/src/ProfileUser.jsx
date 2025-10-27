@@ -8,13 +8,13 @@ function Profile() {
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState("");
-  const token = localStorage.getItem("token"); // 🔑 token từ login
+  const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
   // ✅ Hàm đăng xuất
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/"); // quay về trang đăng nhập
+    navigate("/");
   };
 
   // 🔹 Lấy thông tin profile
@@ -28,7 +28,7 @@ function Profile() {
         setForm({ name: res.data.name, email: res.data.email, password: "", confirmPassword: "" });
       } catch (error) {
         console.error("Lỗi khi lấy profile:", error);
-        setMessage("⚠️ Không thể tải thông tin người dùng!");
+        setMessage(" Không thể tải thông tin người dùng!");
       }
     };
     fetchProfile();
@@ -38,7 +38,7 @@ function Profile() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (form.password && form.password !== form.confirmPassword) {
-      setMessage("❌ Mật khẩu xác nhận không khớp!");
+      setMessage(" Mật khẩu xác nhận không khớp!");
       return;
     }
 
@@ -55,13 +55,31 @@ function Profile() {
 
       setUser(res.data.updatedUser);
       setEditing(false);
-      setMessage("✅ Cập nhật thành công!");
+      setMessage(" Cập nhật thành công!");
     } catch (error) {
       console.error("Lỗi cập nhật:", error);
-      setMessage("❌ Cập nhật thất bại!");
+      setMessage(" Cập nhật thất bại!");
     }
 
     setLoading(false);
+  };
+
+  // 🔹 Xóa tài khoản
+  const handleDeleteAccount = async () => {
+    const confirmDelete = window.confirm("⚠️ Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác!");
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete("http://localhost:3000/api/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert("🗑️ Tài khoản đã bị xóa!");
+      localStorage.removeItem("token");
+      navigate("/");
+    } catch (error) {
+      console.error("Lỗi khi xóa tài khoản:", error);
+      setMessage("❌ Xóa tài khoản thất bại!");
+    }
   };
 
   const styles = {
@@ -79,7 +97,7 @@ function Profile() {
       position: "absolute",
       top: "20px",
       right: "20px",
-      background: "linear-gradient(135deg, #ef4444, #f97316)", // 🌈 đỏ sang cam
+      background: "linear-gradient(135deg, #ef4444, #f97316)",
       color: "#fff",
       border: "none",
       padding: "10px 18px",
@@ -89,11 +107,6 @@ function Profile() {
       transition: "transform 0.2s, box-shadow 0.3s",
       boxShadow: "0 4px 12px rgba(239,68,68,0.3)",
     },
-    logoutBtnHover: {
-      transform: "scale(1.05)",
-      boxShadow: "0 6px 18px rgba(249,115,22,0.4)",
-    },
-
     title: {
       textAlign: "center",
       fontSize: "24px",
@@ -142,6 +155,19 @@ function Profile() {
       cursor: "pointer",
       marginTop: "10px",
     },
+    deleteBtn: {
+      width: "100%",
+      padding: "14px",
+      background: "linear-gradient(135deg, #dc2626, #ef4444)",
+      color: "#fff",
+      border: "none",
+      borderRadius: "16px",
+      fontSize: "16px",
+      fontWeight: "600",
+      cursor: "pointer",
+      marginTop: "15px",
+      boxShadow: "0 4px 12px rgba(220,38,38,0.3)",
+    },
     message: {
       textAlign: "center",
       marginTop: "10px",
@@ -151,18 +177,11 @@ function Profile() {
   };
 
   if (!user)
-    return (
-      <p style={{ textAlign: "center", marginTop: "30px" }}>⏳ Đang tải thông tin...</p>
-    );
+    return <p style={{ textAlign: "center", marginTop: "30px" }}>⏳ Đang tải thông tin...</p>;
 
   return (
     <div style={styles.container}>
-      <button
-        style={styles.logoutBtn}
-        onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-        onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
-        onClick={handleLogout}
-      >
+      <button style={styles.logoutBtn} onClick={handleLogout}>
         Đăng xuất
       </button>
 
@@ -172,7 +191,15 @@ function Profile() {
         <div style={{ textAlign: "center" }}>
           <p><b>Họ tên:</b> {user.name}</p>
           <p><b>Email:</b> {user.email}</p>
-          <button onClick={() => setEditing(true)} style={styles.button}>✏️ Chỉnh sửa</button>
+
+          <button onClick={() => setEditing(true)} style={styles.button}>
+             Chỉnh sửa
+          </button>
+
+          {/* 🗑️ Nút xóa tài khoản */}
+          <button onClick={handleDeleteAccount} style={styles.deleteBtn}>
+             Xóa tài khoản
+          </button>
         </div>
       ) : (
         <form onSubmit={handleUpdate}>
@@ -194,7 +221,7 @@ function Profile() {
             required
           />
 
-          <label style={styles.label}>Mật khẩu mới (tuỳ chọn)</label>
+          <label style={styles.label}>Mật khẩu mới (tùy chọn)</label>
           <input
             type="password"
             placeholder="Nhập mật khẩu mới"
@@ -213,7 +240,7 @@ function Profile() {
           />
 
           <button type="submit" style={styles.button} disabled={loading}>
-            {loading ? "⏳ Đang lưu..." : "💾 Lưu thay đổi"}
+            {loading ? "⏳ Đang lưu..." : "Lưu thay đổi"}
           </button>
 
           <button
@@ -225,7 +252,7 @@ function Profile() {
             }}
             style={styles.cancelBtn}
           >
-            ❌ Hủy
+             Hủy
           </button>
         </form>
       )}

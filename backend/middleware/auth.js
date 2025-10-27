@@ -8,9 +8,10 @@ const authenticate = async (req, res, next) => {
     if (!token) return res.status(401).json({ message: "Thiếu token!" });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select("-password");
-    if (!req.user) return res.status(401).json({ message: "Token không hợp lệ!" });
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
 
+    req.user = user; // ✅ Gán user thật từ DB
     next();
   } catch (error) {
     return res.status(401).json({ message: "Xác thực thất bại!", error });
