@@ -4,22 +4,26 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
-const path = require('path');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
 
-// ================== CẤU HÌNH LƯU ẢNH ==================
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
+// ================== CẤU HÌNH CLOUDINARY ==================
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-const upload = multer({
-  storage,
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png/;
-    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-    if (ext) cb(null, true);
-    else cb(new Error('Chỉ chấp nhận file ảnh (jpg, jpeg, png)!'));
+
+// ================== CẤU HÌNH MULTER STORAGE ==================
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'avatars', // thư mục trên Cloudinary
+    allowed_formats: ['jpg', 'png', 'jpeg'],
   },
 });
+
+const upload = multer({ storage });
 
 // ================== MIDDLEWARE XÁC THỰC TOKEN ==================
 const verifyToken = (req, res, next) => {
@@ -27,8 +31,7 @@ const verifyToken = (req, res, next) => {
   if (!token) return res.status(401).json({ message: 'Không có token!' });
 
   try {
-    const JWT_SECRET = process.env.JWT_SECRET || 'mysecret';
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'mysecret');
     req.user = decoded;
     next();
   } catch (error) {
@@ -36,41 +39,24 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// ================== LẤY PROFILE ==================
-router.get('/', verifyToken, async (req, res) => {
+// ================== UPLOAD AVATAR (CLOUDINARY) ==================
+router.post('/upload-avatar', verifyToken, upload.single('avatar'), async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
-    if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error });
-  }
-});
+    const imageUrl = req.file.path; // Link Cloudinary tự động sinh
 
-// ================== CẬP NHẬT PROFILE ==================
-router.put('/', verifyToken, upload.single('avatar'), async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    const updateData = {};
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { avatar: imageUrl },
+      { new: true }
+    ).select('-password');
 
-    if (name) updateData.name = name;
-    if (email) updateData.email = email;
-    if (password) updateData.password = await bcrypt.hash(password, 10);
-    if (req.file) updateData.avatar = `/uploads/${req.file.filename}`;
-
-    if (email) {
-      const existed = await User.findOne({ email, _id: { $ne: req.user.id } });
-      if (existed) return res.status(400).json({ message: 'Email đã được sử dụng!' });
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(req.user.id, updateData, {
-      new: true,
-    }).select('-password');
-
-    if (!updatedUser) return res.status(404).json({ message: 'Không tìm thấy người dùng!' });
-    res.json({ message: '✅ Cập nhật thành công!', updatedUser });
-  } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error });
+    res.json({
+      message: 'Tải ảnh lên Cloudinary thành công!',
+      avatar: imageUrl,
+      user,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi server', error: err.message });
   }
 });
 

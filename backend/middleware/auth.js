@@ -1,10 +1,8 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-const verifyToken = async (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ message: "Thiếu token!" });
-
+// Middleware xác thực token (bắt buộc login)
+const authenticate = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
     if (!token) return res.status(401).json({ message: "Thiếu token!" });
@@ -20,11 +18,15 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
-const isAdmin = (req, res, next) => {
-  if (!req.user?.isAdmin) {
-    return res.status(403).json({ message: "Chỉ admin mới được phép truy cập!" });
-  }
-  next();
+// Middleware kiểm tra quyền (Admin/User)
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Bạn không có quyền truy cập!" });
+    }
+    next();
+  };
 };
 
-module.exports = { verifyToken, isAdmin };
+// 🟢 Export lại cả 2 function
+module.exports = { authenticate, authorize };
