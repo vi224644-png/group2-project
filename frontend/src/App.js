@@ -8,54 +8,150 @@ import Profile from "./ProfileUser";
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
 import UploadAvatar from "./UploadAvatar";
-import { jwtDecode } from "jwt-decode"; // ✅ named import
+import { jwtDecode } from "jwt-decode";
+import api from "./api"; // ✅ 1. Import 'api' (đã có interceptor)
 
 function App() {
   const [refresh, setRefresh] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null); // State lưu thông tin user
+  const [loading, setLoading] = useState(true); // State chờ load user từ localStorage
   const navigate = useNavigate();
 
   const handleAdd = () => setRefresh(!refresh);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setCurrentUser(null);
-    navigate("/"); // quay về login
+  /**
+   * ----------------------------------------
+   * XỬ LÝ ĐĂNG XUẤT (THEO HOẠT ĐỘNG 1)
+   * ----------------------------------------
+   */
+  const handleLogout = async () => {
+    const refreshToken = localStorage.getItem("refreshToken");
+    
+    try {
+      // 1. (SV2) Gọi API backend để revoke (hủy) RT
+      // Chúng ta dùng 'api.post' để nó tự đính kèm AT (nếu cần)
+      if (refreshToken) {
+        await api.post("/auth/logout", { refreshToken });
+      }
+    } catch (err) {
+      console.error("Lỗi khi logout trên server (có thể token đã hết hạn):", err);
+      // Dù server lỗi, client vẫn phải tiếp tục logout
+    } finally {
+      // 2. (SV2) Xóa tất cả thông tin khỏi localStorage
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      
+      // 3. Cập nhật state và điều hướng
+      setCurrentUser(null);
+      navigate("/"); // Quay về trang login
+    }
   };
 
-  // Lấy thông tin user từ token khi App load
+  /**
+   * ----------------------------------------
+   * TỰ ĐỘNG LOAD USER KHI KHỞI ĐỘNG APP
+   * ----------------------------------------
+   */
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
+    // Đọc 'accessToken' và 'user' từ localStorage
+    const token = localStorage.getItem("accessToken");
+    const userJson = localStorage.getItem("user");
+
+    if (token && userJson) {
       try {
-        const decoded = jwtDecode(token); // ✅ đúng
-        setCurrentUser(decoded);
+        // Parse dữ liệu user đã lưu
+        const userData = JSON.parse(userJson); 
+        setCurrentUser(userData);
+        
+        // (Nâng cao) Kiểm tra xem AT còn hạn không, nếu không thì interceptor sẽ tự xử lý
+        // Bạn có thể decode AT để lấy 'exp' (expiry time)
+        const decodedToken = jwtDecode(token);
+        const currentTime = Date.now() / 1000;
+        
+        if (decodedToken.exp < currentTime) {
+          console.warn("Access Token đã hết hạn khi load App. Interceptor sẽ tự refresh.");
+          // Interceptor (trong api.js) sẽ tự động xử lý khi có request API tiếp theo
+        }
+
       } catch (err) {
-        console.error("Token không hợp lệ:", err);
-        localStorage.removeItem("token");
+        console.error("Dữ liệu user/token không hợp lệ:", err);
+        // Xóa hết nếu dữ liệu hỏng
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
       }
     }
-  }, []);
+    // Đánh dấu là đã load xong
+    setLoading(false); 
+  }, []); // Chỉ chạy 1 lần duy nhất khi App mount
 
-  // Route bảo vệ admin
+  /**
+   * ----------------------------------------
+   * ROUTE BẢO VỆ CHO ADMIN
+   * ----------------------------------------
+   */
   const AdminRoute = ({ children }) => {
-    if (currentUser === null) return null; // đang load token
-    if (!currentUser) return <Navigate to="/" replace />; // chưa login
-    if (currentUser.role !== "admin") return <Navigate to="/profile" replace />; // không phải admin
-    return children; // là admin → render
+    if (loading) {
+      return <div>Đang tải...</div>; // Hiển thị loading trong khi chờ check token
+    }
+    if (!currentUser) {
+      return <Navigate to="/" replace />; // Chưa login, quay về trang login
+    }
+    if (currentUser.role !== "admin") {
+      return <Navigate to="/profile" replace />; // Không phải admin, về profile
+    }
+    return children; // Là admin -> render component
   };
+
+  /**
+   * ----------------------------------------
+   * ROUTE BẢO VỆ CHO USER (ĐÃ LOGIN)
+   * ----------------------------------------
+   */
+  const ProtectedRoute = ({ children }) => {
+    if (loading) {
+      return <div>Đang tải...</div>; // Chờ check token
+    }
+    if (!currentUser) {
+      return <Navigate to="/" replace />; // Chưa login, quay về trang login
+    }
+    return children; // Đã login -> render component
+  };
+
+  // Nếu đang loading, chưa render Routes
+  if (loading) {
+    return <div>Đang tải ứng dụng...</div>;
+  }
 
   return (
     <Routes>
+      {/* Routes công khai */}
       <Route path="/" element={<Login setCurrentUser={setCurrentUser} />} />
       <Route path="/signup" element={<Signup />} />
-      <Route path="/profile" element={<Profile currentUser={currentUser} />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/upload-avatar" element={<UploadAvatar />} />
 
+      {/* Routes cần đăng nhập (User) */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile currentUser={currentUser} onLogout={handleLogout} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/upload-avatar"
+        element={
+          <ProtectedRoute>
+            <UploadAvatar />
+          </ProtectedRoute>
+        }
+      />
 
+      {/* Routes cần đăng nhập (Admin) */}
       <Route
         path="/dashboard"
         element={
@@ -85,6 +181,7 @@ function App() {
   );
 }
 
+// Giữ nguyên styles
 const styles = {
   container: { position: "relative", fontFamily: "'Inter', sans-serif", padding: "30px" },
   header: { display: "flex", justifyContent: "center", alignItems: "center", position: "relative", marginBottom: "25px" },
