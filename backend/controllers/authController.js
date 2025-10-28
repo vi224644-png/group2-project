@@ -28,6 +28,7 @@ exports.signup = async (req, res) => {
 
 /* =============================
    🔹 ĐĂNG NHẬP (LOGIN)
+============================= */
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -63,6 +64,8 @@ exports.login = async (req, res) => {
 
 /* =============================
    🔹 ĐĂNG XUẤT (LOGOUT)
+============================= */
+exports.logout = (req, res) => {
   res.status(200).json({ message: "Đăng xuất thành công!" });
 };
 /* =============================
