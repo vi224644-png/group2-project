@@ -1,26 +1,25 @@
-const bcrypt = require("bcryptjs");
+
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 
-//Lấy danh sách user (chỉ Admin được phép)
+// GET /users -> lấy danh sách user từ MongoDB
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password"); // ẩn password
+    const users = await User.find();
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error });
   }
 };
 
-//Thêm user mới (Admin)
+// POST /users -> thêm user mới
 const addUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Vui lòng nhập đủ name, email, password" });
     }
 
-    // Kiểm tra trùng email
     const existed = await User.findOne({ email });
     if (existed) {
       return res.status(409).json({ message: "Email đã tồn tại" });
@@ -32,39 +31,36 @@ const addUser = async (req, res) => {
     const newUser = new User({ name, email, password: hashedPassword });
     await newUser.save();
 
-    res.status(201).json({
-      message: "Tạo user thành công!",
-      user: { ...newUser._doc, password: undefined },
-    });
+    res.status(201).json(newUser);
   } catch (error) {
-    console.error("❌ Lỗi addUser:", error);
     res.status(500).json({ message: "Lỗi server", error });
   }
 };
 
-//Cập nhật thông tin user (Admin)
+// PUT /users/:id -> cập nhật user trong MongoDB
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role } = req.body;
+    const { name, email } = req.body;
 
     const updated = await User.findByIdAndUpdate(
       id,
-      { name, email, role },
-      { new: true }
-    ).select("-password");
+      { name, email },
+      { new: true } // trả về document mới sau khi update
+    );
 
     if (!updated) {
       return res.status(404).json({ message: "Không tìm thấy user" });
     }
 
-    return res.status(200).json({ message: "Cập nhật thành công", updated });
+    return res.status(200).json(updated);
   } catch (error) {
     return res.status(500).json({ message: "Lỗi server", error });
   }
 };
 
-//Xóa user (Admin hoặc chính chủ)
+
+// DELETE /users/:id -> Xóa user
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -74,38 +70,11 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy user" });
     }
 
-    return res.status(200).json({ message: "Xóa thành công!" });
+    return res.status(200).json({ message: "Xóa thành công" });
   } catch (error) {
     return res.status(500).json({ message: "Lỗi server", error });
   }
 };
 
-//Upload avatar (User upload ảnh đại diện của mình)
-const uploadAvatar = async (req, res) => {
-  try {
-    const userId = req.user.id; // lấy từ token
-    if (!req.file) {
-      return res.status(400).json({ message: "Vui lòng chọn file ảnh!" });
-    }
+module.exports = { getUsers, addUser, updateUser, deleteUser };
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "avatars",
-    });
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { avatar: result.secure_url },
-      { new: true }
-    ).select("-password");
-
-    res.status(200).json({
-      message: "Upload avatar thành công!",
-      avatar: updatedUser.avatar,
-    });
-  } catch (error) {
-    console.error("Lỗi upload avatar:", error);
-    res.status(500).json({ message: "Lỗi khi upload avatar", error });
-  }
-};
-
-module.exports = { getUsers, addUser, updateUser, deleteUser, uploadAvatar };

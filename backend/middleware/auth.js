@@ -1,32 +1,25 @@
+
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
 
-// Middleware xác thực token (bắt buộc login)
-const authenticate = async (req, res, next) => {
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ message: "Thiếu token!" });
+
   try {
-    const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
-    if (!token) return res.status(401).json({ message: "Thiếu token!" });
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select("-password");
-    if (!user) return res.status(404).json({ message: "Không tìm thấy người dùng!" });
-
-    req.user = user; // ✅ Gán user thật từ DB
+    req.user = decoded; // chứa: id, email, isAdmin
     next();
-  } catch (error) {
-    return res.status(401).json({ message: "Xác thực thất bại!", error });
+  } catch (err) {
+    res.status(403).json({ message: "Token không hợp lệ!" });
   }
 };
 
-// Middleware kiểm tra quyền (Admin/User)
-const authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Bạn không có quyền truy cập!" });
-    }
-    next();
-  };
+const isAdmin = (req, res, next) => {
+  if (!req.user?.isAdmin) {
+    return res.status(403).json({ message: "Chỉ admin mới được phép truy cập!" });
+  }
+  next();
 };
 
-// 🟢 Export lại cả 2 function
-module.exports = { authenticate, authorize };
+module.exports = { verifyToken, isAdmin };
+

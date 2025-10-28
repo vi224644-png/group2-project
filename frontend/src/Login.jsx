@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+// import axios from "axios"; // ⛔️ Không dùng axios gốc
+import api from "./api"; // ✅ Dùng instance 'api' đã có interceptor
 
 function Login({ setCurrentUser }) {
   const [email, setEmail] = useState("");
@@ -12,14 +13,20 @@ function Login({ setCurrentUser }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:3000/api/auth/login", {
+      // ✅ Dùng 'api' thay vì 'axios'
+      const res = await api.post("/auth/login", {
         email,
         password,
       });
 
-      localStorage.setItem("token", res.data.token);
+      // ✅ (SV2) LƯU CẢ 2 TOKEN
+      localStorage.setItem("accessToken", res.data.accessToken);
+      localStorage.setItem("refreshToken", res.data.refreshToken);
+
+      // Lưu user (giữ nguyên)
       localStorage.setItem("user", JSON.stringify(res.data.user));
       setCurrentUser(res.data.user);
+      
       setMessage(res.data.message);
 
       setTimeout(() => {

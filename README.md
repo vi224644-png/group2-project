@@ -1,3 +1,4 @@
+
 # Group 2 Project – Node.js + React + MongoDB
 ## Mô tả dự án
 
@@ -57,3 +58,4 @@ B3: - Mở thêm 1 Git Bash rồi di chuyển vào thư mục frontend cài gói
 224644 Phạm Trần Tuấn Vĩ làm database  
     -Thiết lập MongoDB Atlas  
     -Tạo Model + tích hợp với API
+
