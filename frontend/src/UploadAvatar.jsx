@@ -1,44 +1,58 @@
+// frontend/src/UploadAvatar.jsx
+
 import React, { useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom"; // ✅ import useNavigate
+// ⛔️ import axios from "axios";
+import api from "./api"; // ✅ 1. Dùng instance 'api' có interceptor
+import { useNavigate } from "react-router-dom"; 
 
 function UploadAvatar() {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [message, setMessage] = useState("");
-  const navigate = useNavigate(); // ✅ tạo navigate
+  const navigate = useNavigate(); 
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
-    setPreview(URL.createObjectURL(selectedFile));
+    // Xem trước ảnh
+    if (selectedFile) {
+        setPreview(URL.createObjectURL(selectedFile));
+    }
   };
 
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!file) return setMessage("❌ Vui lòng chọn ảnh!");
 
-    const token = localStorage.getItem("token");
-    if (!token) return setMessage("❌ Bạn chưa đăng nhập");
+    // ⛔️ 2. KHÔNG CẦN LẤY TOKEN HAY SET HEADER THỦ CÔNG
+    // const token = localStorage.getItem("token"); 
+    // if (!token) return setMessage("❌ Bạn chưa đăng nhập");
+    // Interceptor trong 'api.js' sẽ tự động lấy 'accessToken' và đính kèm
 
     const formData = new FormData();
     formData.append("avatar", file);
 
     try {
-      const res = await axios.post(
-        "http://localhost:3000/api/users/upload-avatar",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      // ✅ 3. Dùng 'api' và sửa đường dẫn
+      // 'api.js' đã có baseURL là "http://localhost:3000/api"
+      // server.js của bạn mount route này ở "/api/users"
+      // Nên đường dẫn gọi chỉ cần là "/users/upload-avatar"
+      const res = await api.post(
+        "/users/upload-avatar", 
+        formData
+        // ⛔️ Không cần 'headers', axios tự set 'multipart/form-data'
+        // và interceptor tự set 'Authorization'
       );
+      
       setMessage("✅ " + res.data.message);
-      setPreview(res.data.avatar);
-      setFile(null);
+      setPreview(res.data.avatar); // Cập nhật ảnh preview bằng link cloudinary
+      setFile(null); // Xóa file đã chọn
+
+      // ✅ 4. Cập nhật lại user trong localStorage
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
     } catch (err) {
+      // Interceptor sẽ tự xử lý 401, đây là các lỗi khác (400, 500)
       setMessage("❌ " + (err.response?.data?.message || "Lỗi upload ảnh!"));
     }
   };
@@ -64,7 +78,7 @@ function UploadAvatar() {
         {/* Nút quay lại */}
         <button 
           style={{ ...styles.btnSubmit, background: "#ccc", color: "#333", marginTop: "10px" }}
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(-1)} // Dùng navigate(-1) để quay lại trang trước
         >
            Quay lại
         </button>
@@ -73,6 +87,7 @@ function UploadAvatar() {
   );
 }
 
+// ... (styles giữ nguyên)
 const styles = {
   container: { background: "linear-gradient(135deg,#c2e9fb,#a1c4fd)", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" },
   card: { background: "#fff", padding: "40px", borderRadius: "20px", width: "380px", textAlign: "center", boxShadow: "0 8px 25px rgba(0,0,0,0.15)" },

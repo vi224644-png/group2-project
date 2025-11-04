@@ -6,7 +6,7 @@ const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // chứa: id, email, isAdmin
+    req.user = decoded; // chứa: id, email, role
     next();
   } catch (err) {
     res.status(403).json({ message: "Token không hợp lệ!" });
@@ -14,7 +14,7 @@ const verifyToken = (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-  if (!req.user?.isAdmin) {
+  if (req.user?.role !== "admin") {
     return res.status(403).json({ message: "Chỉ admin mới được phép truy cập!" });
   }
   next();
