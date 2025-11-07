@@ -20,7 +20,7 @@ exports.forgotPassword = async (req, res) => {
 
     console.log("Token lưu vào DB:", resetToken); // Debug
 
-    // Gửi email
+    // Gửi email thật
     const transporter = nodemailer.createTransport({
       service: "Gmail",
       auth: {
@@ -28,7 +28,7 @@ exports.forgotPassword = async (req, res) => {
         pass: process.env.EMAIL_PASS,
       },
     });
-
+    // Nội dung email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: user.email,
