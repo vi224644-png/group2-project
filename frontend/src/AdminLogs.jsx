@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-
-// 1. ✅ Import file 'api.js' của bạn
 import api from "./api"; 
 import { useNavigate } from "react-router-dom";
 
@@ -15,24 +13,22 @@ function AdminLogs() {
       .then((res) => setLogs(res.data))
       .catch((err) => {
         console.error("Lỗi khi lấy logs:", err.message);
-        // 4. ✅ Interceptor đã tự xử lý lỗi 401 (refresh token)
         if (err.response && err.response.status === 403) {
           alert("Bạn không có quyền xem trang này!");
-          navigate("/dashboard"); // Đẩy về dashboard
+          navigate("/dashboard");
         }
       })
       .finally(() => setLoading(false));
-      
-  }, [navigate]); // Thêm navigate vào dependency array
+  }, [navigate]);
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        {/* 🔹 Nút quay lại */}
+        {/* Nút quay lại */}
         <button
           style={styles.backButton}
-          onMouseEnter={(e) => (e.target.style.background = "#1d4ed8")}
-          onMouseLeave={(e) => (e.target.style.background = "#2563eb")}
+          onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.1)")}
+          onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(1)")}
           onClick={() => navigate("/dashboard")}
         >
           Quay lại Dashboard
@@ -58,16 +54,14 @@ function AdminLogs() {
                 <tr
                   key={log._id}
                   style={styles.tr}
-                  // 5. ✅ Sửa lỗi Hover: Dùng cách của React
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f1f5f9")}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                 >
                   <td style={styles.td}>
                     {log.user?.name || (
                       <span style={{ color: "#999" }}>
-                        {/* Cải tiến: Hiển thị email nếu là log đăng nhập thất bại */}
                         {log.action.includes("thất bại - email")
-                          ? log.action.split("email ")[1] // Lấy phần email
+                          ? log.action.split("email ")[1]
                           : "Hệ thống / Ẩn danh"}
                       </span>
                     )}
@@ -88,7 +82,6 @@ function AdminLogs() {
 
 /* 🎨 CSS in JS */
 const styles = {
-  // ... (Toàn bộ style của bạn giữ nguyên)
   container: {
     background: "linear-gradient(135deg, #c2e9fb 0%, #a1c4fd 100%)",
     minHeight: "100vh",
@@ -112,15 +105,15 @@ const styles = {
     position: "absolute",
     top: "20px",
     left: "20px",
-    background: "#2563eb",
-    color: "white",
+    background: "linear-gradient(to right, #2563eb, #60a5fa)",
+    color: "#fff",
     border: "none",
     borderRadius: "9999px",
-    padding: "10px 18px",
+    padding: "10px 20px",
     fontSize: "14px",
     fontWeight: "500",
     cursor: "pointer",
-    transition: "all 0.2s ease",
+    transition: "all 0.25s ease",
     boxShadow: "0 3px 8px rgba(37,99,235,0.3)",
   },
   title: {

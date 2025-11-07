@@ -1,34 +1,53 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-// import axios from "axios"; // ⛔️ Không dùng axios gốc
-import api from "./api"; // ✅ Dùng instance 'api' đã có interceptor
+import { useDispatch, useSelector } from "react-redux";
+import { loginStart, loginSuccess, loginFailure } from "./redux/authSlice";
+import api from "./api"; // ✅ axios instance có interceptor
 
-function Login({ setCurrentUser }) {
+function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // ✅ [FIX 1] Lấy user và loading state từ Redux
+  const { user, loading } = useSelector((state) => state.auth);
+
+  // ✅ [FIX 1] Thêm Effect để tự động chuyển hướng
+  useEffect(() => {
+    // Nếu có user trong state, lập tức chuyển hướng
+    if (user) {
+      const role = user.role;
+      if (role === "admin" || role === "moderator") {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/profile", { replace: true });
+      }
+    }
+  }, [user, navigate]); // Chạy lại khi `user` thay đổi
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    dispatch(loginStart());
+
     try {
-      // ✅ Dùng 'api' thay vì 'axios'
-      const res = await api.post("/auth/login", {
-        email,
-        password,
-      });
+      const res = await api.post("/auth/login", { email, password });
 
-      // ✅ (SV2) LƯU CẢ 2 TOKEN
-      localStorage.setItem("accessToken", res.data.accessToken);
-      localStorage.setItem("refreshToken", res.data.refreshToken);
+      // ✅ Gửi dữ liệu vào Redux store
+      dispatch(
+        loginSuccess({
+          user: res.data.user,
+          accessToken: res.data.accessToken,
+          refreshToken: res.data.refreshToken,
+        })
+      );
 
-      // Lưu user (giữ nguyên)
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      setCurrentUser(res.data.user);
-      
-      setMessage(res.data.message);
+      setMessage("✅ Đăng nhập thành công!");
 
+      // setTimeout này vẫn chạy, nhưng useEffect ở trên sẽ
+      // phản ứng với state `user` mới và chuyển hướng
       setTimeout(() => {
         const role = res.data.user.role;
         if (role === "admin" || role === "moderator") {
@@ -37,11 +56,22 @@ function Login({ setCurrentUser }) {
           navigate("/profile");
         }
       }, 500);
-
     } catch (err) {
-      setMessage(err.response?.data?.message || "❌ Lỗi đăng nhập");
+      const msg = err.response?.data?.message || "❌ Lỗi đăng nhập";
+      setMessage(msg);
+      dispatch(loginFailure(msg));
     }
   };
+
+  // ✅ [FIX 1] Nếu đang tải hoặc user đã có, không render form
+  // (Giúp tránh form nháy lên 1 cái trước khi chuyển hướng)
+  if (loading || user) {
+    return (
+      <div style={{ textAlign: "center", marginTop: "20%" }}>
+        <p>Đang xử lý...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
@@ -59,7 +89,7 @@ function Login({ setCurrentUser }) {
             required
           />
 
-          {/* Mật khẩu + con mắt */}
+          {/* Mật khẩu + icon con mắt */}
           <div style={styles.inputWrapper}>
             <input
               type={showPassword ? "text" : "password"}
@@ -78,18 +108,41 @@ function Login({ setCurrentUser }) {
             >
               {showPassword ? (
                 // Eye-off SVG
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 3l18 18" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M10.58 10.58a3 3 0 0 0 4.24 4.24" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M14.12 9.88C15.01 10.77 15.6 11.93 15.6 13.2c0 2.21-1.79 4-4 4-1.27 0-2.43-.59-3.32-1.48" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M2.5 12c2.5-4.5 7-7 12-7 1.73 0 3.39.36 4.9 1.02" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M21.5 12c-1.16 2.09-2.96 3.77-5.06 4.7" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M3 3l18 18"
+                    stroke="#374151"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M10.58 10.58a3 3 0 0 0 4.24 4.24"
+                    stroke="#374151"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               ) : (
                 // Eye SVG
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M1.5 12s4-7.5 10.5-7.5S22.5 12 22.5 12s-4 7.5-10.5 7.5S1.5 12 1.5 12z" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                  <circle cx="12" cy="12" r="3" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M1.5 12s4-7.5 10.5-7.5S22.5 12 22.5 12s-4 7.5-10.5 7.5S1.5 12 1.5 12z"
+                    stroke="#374151"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="3"
+                    stroke="#374151"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               )}
             </button>
@@ -99,18 +152,22 @@ function Login({ setCurrentUser }) {
           <div style={{ textAlign: "right", marginBottom: "15px" }}>
             <Link
               to="/forgot-password"
-              style={{ fontSize: "14px", color: "#007bff", textDecoration: "none" }}
+              style={{
+                fontSize: "14px",
+                color: "#007bff",
+                textDecoration: "none",
+              }}
             >
               Quên mật khẩu?
             </Link>
           </div>
 
-          <button type="submit" className="btn-submit">
-            Đăng nhập
+          <button type="submit" className="btn-submit" disabled={loading}>
+            {loading ? "Đang tải..." : "Đăng nhập"}
           </button>
         </form>
 
-        {/* Thông báo */}
+        {/* ✅ [FIX 2] Hiển thị thông báo (sửa lỗi ESLint) */}
         {message && (
           <p
             style={{
@@ -132,6 +189,7 @@ function Login({ setCurrentUser }) {
         </p>
       </div>
 
+      {/* CSS nội tuyến */}
       <style>{`
         .input-field {
           width: 100%;
@@ -144,12 +202,10 @@ function Login({ setCurrentUser }) {
           transition: 0.3s;
           box-sizing: border-box;
         }
-
         .input-field:focus {
           border-color: #4facfe;
           box-shadow: 0 0 6px rgba(79,172,254,0.4);
         }
-
         .btn-submit {
           width: 100%;
           padding: 13px 14px;
@@ -162,7 +218,6 @@ function Login({ setCurrentUser }) {
           font-weight: 600;
           transition: transform 0.2s, box-shadow 0.2s;
         }
-
         .btn-submit:hover {
           transform: scale(1.02);
           box-shadow: 0 4px 12px rgba(0,0,0,0.2);
@@ -189,7 +244,6 @@ const styles = {
     boxShadow: "0 10px 30px rgba(16,24,40,0.08)",
     width: "400px",
     textAlign: "center",
-    transform: "translateY(-10px)", // nhẹ nhàng đẩy lên cho cân thị giác
   },
   title: {
     marginBottom: "20px",
