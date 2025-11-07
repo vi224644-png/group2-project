@@ -4,6 +4,7 @@ import axios from "axios";
 function AddUser({ onAdd }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("user"); // 🧩 Mặc định là "user"
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -19,16 +20,28 @@ function AddUser({ onAdd }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-
+    const token = localStorage.getItem("accessToken");
     setLoading(true);
     try {
-      await axios.post("http://localhost:3000/users", { 
-        name, 
-        email, 
-        password: "123456"   // thêm dòng này
-      });
+      await axios.post(
+        "http://localhost:3000/users",
+        {
+          name,
+          email,
+          role,
+          password: "123456",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // 🧩 gửi token JWT
+          },
+        }
+      );
+
+
       setName("");
       setEmail("");
+      setRole("user");
       setErrors({});
       onAdd();
     } catch (err) {
@@ -46,7 +59,6 @@ function AddUser({ onAdd }) {
       boxShadow: "0 12px 30px rgba(0,0,0,0.1)",
       maxWidth: "450px",
       fontFamily: "Inter, sans-serif",
-      transition: "all 0.3s ease",
     },
     title: {
       marginBottom: "25px",
@@ -57,7 +69,7 @@ function AddUser({ onAdd }) {
     },
     input: {
       width: "100%",
-      height: "48px", // ✅ cùng chiều cao với nút
+      height: "48px",
       padding: "0 16px",
       marginBottom: "10px",
       borderRadius: "12px",
@@ -66,6 +78,17 @@ function AddUser({ onAdd }) {
       outline: "none",
       transition: "border 0.2s ease",
       boxSizing: "border-box",
+    },
+    select: {
+      width: "100%",
+      height: "48px",
+      padding: "0 12px",
+      marginBottom: "10px",
+      borderRadius: "12px",
+      border: "1px solid #d1d5db",
+      fontSize: "15px",
+      outline: "none",
+      backgroundColor: "#fff",
     },
     inputError: {
       border: "1px solid #ef4444",
@@ -112,6 +135,17 @@ function AddUser({ onAdd }) {
         style={{ ...styles.input, ...(errors.email ? styles.inputError : {}) }}
       />
       {errors.email && <div style={styles.errorText}>{errors.email}</div>}
+
+      {/* 🧩 Thêm dropdown chọn role */}
+      <select
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+        style={styles.select}
+      >
+        <option value="user">Người dùng</option>
+        <option value="moderator">Moderator</option>
+        <option value="admin">Admin</option>
+      </select>
 
       <button type="submit" style={styles.button} disabled={loading}>
         {loading ? "Đang thêm..." : "Thêm người dùng"}
