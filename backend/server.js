@@ -12,6 +12,8 @@ const profileRoutes = require("./routes/profileRoutes");
 const userRoutes = require("./routes/user"); // ✅ route user
 const uploadRoutes = require("./routes/uploadRoutes"); // ✅ thêm upload
 const passwordRoutes = require("./routes/passwordRoutes"); // ✅ thêm đổi mật khẩu
+const logRoutes = require("./routes/logRoutes"); // ✅ thêm log
+const { verifyToken } = require("./middleware/auth"); // nếu có xác thực
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,9 +45,10 @@ app.use("/uploads", express.static(uploadDir));
 // 🔹 Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
-app.use("/users", userRoutes);
+app.use("/users", verifyToken , userRoutes);
 app.use("/api/users", uploadRoutes);
 app.use("/api/", passwordRoutes);
+app.use("/api", logRoutes);
 
 // 🔹 Route kiểm tra
 app.get("/", (req, res) => {

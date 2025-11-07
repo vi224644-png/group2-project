@@ -1,10 +1,10 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const logActivity = require("../middleware/logActivity"); // ✅ Ghi log hoạt động
 
 // ✅ GET /users -> Lấy danh sách tất cả user
 const getUsers = async (req, res) => {
   try {
-    // Không trả password ra client
     const users = await User.find().select("-password");
     res.status(200).json(users);
   } catch (error) {
@@ -17,32 +17,31 @@ const addUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // Kiểm tra input
     if (!name || !email || !password) {
       return res
         .status(400)
         .json({ message: "Vui lòng nhập đủ name, email, password" });
     }
 
-    // Kiểm tra email trùng
     const existed = await User.findOne({ email });
     if (existed) {
       return res.status(409).json({ message: "Email đã tồn tại" });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
-      role: role || "user", // mặc định là user
+      role: role || "user",
     });
 
     await newUser.save();
 
-    // Ẩn password trước khi trả về
+    // ✅ Ghi log (người thêm user mới)
+    await logActivity(req.user?.id, `Thêm người dùng mới: ${email}`);
+
     const userResponse = newUser.toObject();
     delete userResponse.password;
 
@@ -68,6 +67,9 @@ const updateUser = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy user" });
     }
 
+    // ✅ Ghi log
+    await logActivity(req.user?.id, `Cập nhật thông tin người dùng: ${email || id}`);
+
     return res.status(200).json(updated);
   } catch (error) {
     return res.status(500).json({ message: "Lỗi server", error: error.message });
@@ -83,6 +85,9 @@ const deleteUser = async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ message: "Không tìm thấy user" });
     }
+
+    // ✅ Ghi log
+    await logActivity(req.user?.id, `Xóa người dùng: ${deleted.email}`);
 
     return res.status(200).json({ message: "Xóa thành công" });
   } catch (error) {

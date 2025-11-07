@@ -8,6 +8,7 @@ import Profile from "./ProfileUser";
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
 import UploadAvatar from "./UploadAvatar";
+import AdminLogs from "./AdminLogs";
 import { jwtDecode } from "jwt-decode";
 import api from "./api";
 
@@ -19,7 +20,6 @@ function App() {
 
   const handleAdd = () => setRefresh(!refresh);
 
-  // 🧩 Logout
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem("refreshToken");
     try {
@@ -35,7 +35,6 @@ function App() {
     }
   };
 
-  // 🧩 Load user từ localStorage
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     const userJson = localStorage.getItem("user");
@@ -60,7 +59,6 @@ function App() {
     setLoading(false);
   }, []);
 
-  // 🧩 Route kiểm tra quyền theo role
   const RoleRoute = ({ allowedRoles, children }) => {
     if (loading) return <div>Đang tải...</div>;
     if (!currentUser) return <Navigate to="/" replace />;
@@ -70,7 +68,6 @@ function App() {
     return children;
   };
 
-  // 🧩 Route yêu cầu đăng nhập
   const ProtectedRoute = ({ children }) => {
     if (loading) return <div>Đang tải...</div>;
     if (!currentUser) return <Navigate to="/" replace />;
@@ -105,57 +102,83 @@ function App() {
         }
       />
 
-      {/* --- Trang Dashboard cho admin & moderator --- */}
+      {/* --- Dashboard cho admin & moderator --- */}
       <Route
         path="/dashboard"
         element={
           <RoleRoute allowedRoles={["admin", "moderator"]}>
             <div style={styles.container}>
               <div style={styles.header}>
-                <h1 style={styles.title}>
-                  {currentUser?.role === "admin"
-                    ? "Quản lý người dùng (Admin)"
-                    : "Bảng điều khiển (Moderator)"}
-                </h1>
-
                 {currentUser && (
                   <div style={styles.userInfo}>
                     <span>
                       Xin chào, <b>{currentUser.name || currentUser.email}</b> (
                       {currentUser.role})
                     </span>
-                    {/* 🔹 Nút vào trang cá nhân */}
+
+                    {currentUser.role === "admin" && (
+                      <button
+                        style={styles.logButton}
+                        onClick={() => navigate("/logs")}
+                      >
+                        Nhật ký
+                      </button>
+                    )}
+
                     <button
                       style={styles.profileButton}
                       onClick={() => navigate("/profile")}
                     >
                       Trang cá nhân
                     </button>
-                    {/* 🔹 Nút đăng xuất */}
-                    <button style={styles.logoutButton} onClick={handleLogout}>
+
+                    <button
+                      style={styles.logoutButton}
+                      onClick={handleLogout}
+                    >
                       Đăng xuất
                     </button>
                   </div>
                 )}
+
+                <h1 style={styles.title}>
+                  {currentUser?.role === "admin" ? (
+                    <>
+                      Quản lý người dùng <br /> (Admin)
+                    </>
+                  ) : (
+                    <>
+                      Bảng điều khiển <br /> (Moderator)
+                    </>
+                  )}
+                </h1>
               </div>
 
-              {/* Admin có thể thêm người dùng, moderator chỉ được xem */}
               {currentUser?.role === "admin" && <AddUser onAdd={handleAdd} />}
 
-              {/* Moderator không thể sửa/xóa */}
               <UserList key={refresh} canEdit={currentUser?.role === "admin"} />
             </div>
           </RoleRoute>
         }
       />
 
-      {/* --- Nếu user cố vào trang admin --- */}
+      {/* --- Trang log cho Admin --- */}
+      <Route
+        path="/logs"
+        element={
+          <RoleRoute allowedRoles={["admin"]}>
+            <AdminLogs />
+          </RoleRoute>
+        }
+      />
+
+      {/* --- Trang mặc định --- */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
-// --- Style ---
+// --- 🎨 STYLE ---
 const styles = {
   container: {
     position: "relative",
@@ -164,19 +187,38 @@ const styles = {
   },
   header: {
     display: "flex",
-    justifyContent: "center",
+    flexDirection: "column",
     alignItems: "center",
+    justifyContent: "center",
     position: "relative",
     marginBottom: "25px",
   },
-  title: { textAlign: "center", fontSize: "28px", fontWeight: "700" },
+  title: {
+    textAlign: "center",
+    fontSize: "28px",
+    fontWeight: "700",
+    marginTop: "50px", // 🔹 Đẩy chữ thấp hơn hàng nút
+  },
   userInfo: {
     display: "flex",
     alignItems: "center",
+    justifyContent: "flex-end",
     gap: "10px",
     position: "absolute",
+    top: "0",
     right: "20px",
-    top: "20px",
+  },
+  logButton: {
+    background: "linear-gradient(to right, #059669, #34d399)",
+    color: "#fff",
+    border: "none",
+    borderRadius: "9999px",
+    padding: "10px 18px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "500",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+    transition: "all 0.25s ease",
   },
   profileButton: {
     background: "linear-gradient(to right, #2563eb, #60a5fa)",
