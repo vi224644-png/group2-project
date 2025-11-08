@@ -1,5 +1,7 @@
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+
 const jwt = require("jsonwebtoken");
 const RefreshToken = require("../models/RefreshToken"); 
 const logActivity = require("../middleware/logActivity"); // ✅ Ghi log hoạt động
@@ -7,23 +9,30 @@ const logActivity = require("../middleware/logActivity"); // ✅ Ghi log hoạt 
    🔹 ĐĂNG KÝ (Giữ nguyên)
 ============================= 
 */
+
 exports.signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "Email đã tồn tại!" });
+
+    if (!name || !email || !password)
+      return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin!" });
+
+    const existed = await User.findOne({ email });
+    if (existed)
+      return res.status(409).json({ message: "Email đã tồn tại!" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ name, email, password: hashedPassword });
-    await newUser.save();
 
-    res.status(201).json({ message: "Đăng ký thành công!", user: newUser });
+    await newUser.save();
+    res.status(201).json({ message: "Đăng ký thành công!" });
   } catch (err) {
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
 };
 
 /* =============================
+
    🔹 ĐĂNG NHẬP (Sửa đổi theo Hoạt động 1)
 ============================= 
 */
@@ -118,7 +127,7 @@ exports.login = async (req, res) => {
 };
 
 /* =============================
-   🔹 ĐĂNG XUẤT (Sửa đổi theo Hoạt động 1)
+🔹 ĐĂNG XUẤT (Sửa đổi theo Hoạt động 1)
 ============================= 
 */
 exports.logout = async (req, res) => {
@@ -211,7 +220,7 @@ exports.forgotPassword = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: "Email không tồn tại!" });
+return res.status(404).json({ message: "Email không tồn tại!" });
     }
 
     // Tạo token reset mật khẩu
@@ -251,4 +260,3 @@ exports.resetPassword = async (req, res) => {
     res.status(400).json({ message: "Token không hợp lệ hoặc đã hết hạn!", error: err.message });
   }
 };
-

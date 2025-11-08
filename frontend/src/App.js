@@ -36,10 +36,16 @@ function App() {
   // 🧹 Đăng xuất (Đã dọn dẹp)
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem("refreshToken");
+    
     try {
-      if (refreshToken) await api.post("/auth/logout", { refreshToken });
+      // 1. (SV2) Gọi API backend để revoke (hủy) RT
+      // Chúng ta dùng 'api.post' để nó tự đính kèm AT (nếu cần)
+      if (refreshToken) {
+        await api.post("/auth/logout", { refreshToken });
+      }
     } catch (err) {
-      console.error("Lỗi khi logout:", err);
+      console.error("Lỗi khi logout trên server (có thể token đã hết hạn):", err);
+      // Dù server lỗi, client vẫn phải tiếp tục logout
     } finally {
       // ❌ Xóa: ["accessToken", ...].forEach(...)
       // ❌ Xóa: setCurrentUser(null);
@@ -63,6 +69,7 @@ function App() {
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* --- Người dùng đã login --- */}
       {/* ❌ Xóa prop `currentUser` và `loading` */}
@@ -88,15 +95,14 @@ function App() {
       <Route
         path="/dashboard"
         element={
-          <RoleRoute allowedRoles={["admin", "moderator"]}>
+          <AdminRoute>
             <div style={styles.container}>
               <div style={styles.header}>
                 {/* `currentUser` ở đây được lấy từ useSelector ở trên */}
                 {currentUser && (
                   <div style={styles.userInfo}>
                     <span>
-                      Xin chào, <b>{currentUser.name || currentUser.email}</b> (
-                      {currentUser.role})
+                      Xin chào, <b>{currentUser.name || currentUser.email}</b>
                     </span>
 
                     {currentUser.role === "admin" && (
@@ -140,7 +146,7 @@ function App() {
               {currentUser?.role === "admin" && <AddUser onAdd={handleAdd} />}
               <UserList key={refresh} canEdit={currentUser?.role === "admin"} />
             </div>
-          </RoleRoute>
+          </AdminRoute>
         }
       />
 
