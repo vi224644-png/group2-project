@@ -20,10 +20,8 @@ exports.uploadAvatar = async (req, res) => {
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: "avatars",
       resource_type: "image",
-      // Thêm transformation (biến đổi ảnh) nếu muốn
-      // transformation: [
-      //   { width: 200, height: 200, crop: "fill", gravity: "face" }
-      // ]
+      // Thêm transformation (biến đổi ảnh) 
+      transformation: [{ width: 300, height: 300, crop: "fill", gravity: "face" }]
     });
 
     // Xóa file tạm (dùng unlink bất đồng bộ)
