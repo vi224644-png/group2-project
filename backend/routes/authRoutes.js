@@ -8,9 +8,10 @@ const {
   refreshToken // ✅ 1. Import hàm mới
 
 } = require("../controllers/authController");
+const loginLimiter = require("../middleware/rateLimiter");
 
 router.post("/signup", signup);
-router.post("/login", login);
+router.post("/login", loginLimiter, login);
 router.post("/logout", logout);
 
 router.post("/refresh", refreshToken); // ✅ 2. Thêm route mới

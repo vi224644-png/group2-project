@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 
 const jwt = require("jsonwebtoken");
 const RefreshToken = require("../models/RefreshToken"); 
-
+const logActivity = require("../middleware/logActivity"); // ✅ Ghi log hoạt động
 /* =============================
    🔹 ĐĂNG KÝ (Giữ nguyên)
 ============================= 
@@ -39,47 +39,80 @@ exports.signup = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    /* ---------------------------------------------
+       🔸 B1. Kiểm tra người dùng có tồn tại không
+    --------------------------------------------- */
     const user = await User.findOne({ email });
+    if (!user) {
+      // ✅ Ghi log thất bại (user không tồn tại)
+      await logActivity(null, `Đăng nhập thất bại - email ${email} không tồn tại`);
+      return res.status(400).json({ message: "Email không tồn tại!" });
+    }
 
-    if (!user)
-      return res.status(404).json({ message: "Email không tồn tại!" });
-
+    /* ---------------------------------------------
+       🔸 B2. So sánh mật khẩu nhập với mật khẩu mã hoá trong DB
+    --------------------------------------------- */
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(401).json({ message: "Sai mật khẩu!" });
+    if (!isMatch) {
+      // ✅ Ghi log thất bại (sai mật khẩu)
+      await logActivity(user._id, "Đăng nhập thất bại - sai mật khẩu");
+      return res.status(400).json({ message: "Sai mật khẩu!" });
+    }
 
-
-    // ✅ 1. TẠO ACCESS TOKEN (hạn ngắn, vd: 15 phút)
+    /* ---------------------------------------------
+       🔸 B3. Tạo Access Token (hạn ngắn, ví dụ 15 phút)
+       Access Token dùng để truy cập API cần xác thực
+    --------------------------------------------- */
     const accessToken = jwt.sign(
       { id: user._id, name: user.name, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "15m" } // 15 phút
+      { expiresIn: "15m" } // Token hết hạn sau 15 phút
     );
 
-    // ✅ 2. TẠO REFRESH TOKEN (hạn dài, vd: 7 ngày)
+    /* ---------------------------------------------
+       🔸 B4. Tạo Refresh Token (hạn dài, ví dụ 7 ngày)
+       Dùng để xin lại Access Token mới khi bị hết hạn
+    --------------------------------------------- */
     const refreshToken = jwt.sign(
-      { id: user._id }, // Chỉ cần ID trong refresh token
-      process.env.JWT_REFRESH_SECRET, // Dùng secret key KHÁC
+      { id: user._id }, // Refresh chỉ cần lưu ID là đủ
+      process.env.JWT_REFRESH_SECRET, // 🔐 Secret riêng cho Refresh Token
       { expiresIn: "7d" } // 7 ngày
     );
 
-    // ✅ 3. LƯU REFRESH TOKEN VÀO DATABASE (SV1 + SV3)
-    // Xóa RT cũ của user này nếu có (để đảm bảo 1 user chỉ có 1 RT)
+    /* ---------------------------------------------
+       🔸 B5. Xoá Refresh Token cũ (nếu có)
+       → Đảm bảo 1 user chỉ có 1 Refresh Token hợp lệ
+    --------------------------------------------- */
     await RefreshToken.deleteMany({ user: user._id });
-    
-    // Lưu RT mới
+
+    /* ---------------------------------------------
+       🔸 B6. Lưu Refresh Token mới vào MongoDB
+       Giúp server kiểm soát token hợp lệ
+    --------------------------------------------- */
     const newRefreshToken = new RefreshToken({
       user: user._id,
       token: refreshToken,
-      expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 ngày sau
+      expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // +7 ngày
     });
     await newRefreshToken.save();
 
-    // ✅ 4. TRẢ VỀ CẢ 2 TOKEN CHO CLIENT
+    /* ---------------------------------------------
+       🔸 B7. Ghi lại log đăng nhập thành công
+    --------------------------------------------- */
+    await logActivity(user._id, "Đăng nhập thành công");
+
+    /* ---------------------------------------------
+       🔸 B8. Trả về phản hồi cho client (FE)
+       Gồm:
+       - accessToken: dùng để gọi API
+       - refreshToken: dùng để làm mới access token
+       - user info: hiển thị trên FE
+    --------------------------------------------- */
     res.status(200).json({
       message: "Đăng nhập thành công!",
-      accessToken, // Trả AT
-      refreshToken, // Trả RT
+      accessToken,
+      refreshToken,
       user: {
         id: user._id,
         name: user.name,
@@ -88,6 +121,7 @@ exports.login = async (req, res) => {
       },
     });
   } catch (err) {
+    console.error("Lỗi login:", err);
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
 };
@@ -98,26 +132,33 @@ exports.login = async (req, res) => {
 */
 exports.logout = async (req, res) => {
   try {
-    // Nhận refreshToken từ client (client phải gửi lên)
     const { refreshToken } = req.body;
     if (!refreshToken) {
       return res.status(400).json({ message: "Thiếu Refresh Token" });
     }
 
-    // ✅ (SV1) Tìm và XÓA (REVOKE) token khỏi DB
-    const result = await RefreshToken.deleteOne({ token: refreshToken });
-
-    if (result.deletedCount === 0) {
-      // Dù không tìm thấy token cũng nên trả về 200 (an toàn hơn)
-      // nhưng ở đây ta trả 400 để client biết token bị sai
+    // 🔹 Tìm refresh token trong DB
+    const tokenDoc = await RefreshToken.findOne({ token: refreshToken });
+    if (!tokenDoc) {
       return res.status(400).json({ message: "Refresh Token không hợp lệ" });
     }
 
+    // 🔹 Lấy userId từ tokenDoc để ghi log
+    const userId = tokenDoc.user;
+
+    // 🔹 Xoá Refresh Token khỏi DB
+    await RefreshToken.deleteOne({ token: refreshToken });
+
+    // ✅ Ghi lại log đăng xuất
+    await logActivity(userId, "Đăng xuất");
+
     res.status(200).json({ message: "Đăng xuất thành công!" });
   } catch (err) {
+    console.error("Lỗi khi đăng xuất:", err);
     res.status(500).json({ message: "Lỗi server", error: err.message });
   }
 };
+
 
 /* =============================
    🔹 LÀM MỚI TOKEN (API MỚI - Hoạt động 1)

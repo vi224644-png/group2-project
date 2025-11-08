@@ -8,6 +8,7 @@ import Profile from "./ProfileUser";
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
 import UploadAvatar from "./UploadAvatar";
+import AdminLogs from "./AdminLogs";
 import { jwtDecode } from "jwt-decode";
 import api from "./api"; // ✅ 1. Import 'api' (đã có interceptor)
 
@@ -19,11 +20,6 @@ function App() {
 
   const handleAdd = () => setRefresh(!refresh);
 
-  /**
-   * ----------------------------------------
-   * XỬ LÝ ĐĂNG XUẤT (THEO HOẠT ĐỘNG 1)
-   * ----------------------------------------
-   */
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem("refreshToken");
     
@@ -48,11 +44,6 @@ function App() {
     }
   };
 
-  /**
-   * ----------------------------------------
-   * TỰ ĐỘNG LOAD USER KHI KHỞI ĐỘNG APP
-   * ----------------------------------------
-   */
   useEffect(() => {
     // Đọc 'accessToken' và 'user' từ localStorage
     const token = localStorage.getItem("accessToken");
@@ -82,33 +73,18 @@ function App() {
         localStorage.removeItem("user");
       }
     }
-    // Đánh dấu là đã load xong
-    setLoading(false); 
-  }, []); // Chỉ chạy 1 lần duy nhất khi App mount
+    setLoading(false);
+  }, []);
 
-  /**
-   * ----------------------------------------
-   * ROUTE BẢO VỆ CHO ADMIN
-   * ----------------------------------------
-   */
-  const AdminRoute = ({ children }) => {
-    if (loading) {
-      return <div>Đang tải...</div>; // Hiển thị loading trong khi chờ check token
-    }
-    if (!currentUser) {
-      return <Navigate to="/" replace />; // Chưa login, quay về trang login
-    }
-    if (currentUser.role !== "admin") {
-      return <Navigate to="/profile" replace />; // Không phải admin, về profile
+  const RoleRoute = ({ allowedRoles, children }) => {
+    if (loading) return <div>Đang tải...</div>;
+    if (!currentUser) return <Navigate to="/" replace />;
+    if (!allowedRoles.includes(currentUser.role)) {
+      return <Navigate to="/profile" replace />;
     }
     return children; // Là admin -> render component
   };
 
-  /**
-   * ----------------------------------------
-   * ROUTE BẢO VỆ CHO USER (ĐÃ LOGIN)
-   * ----------------------------------------
-   */
   const ProtectedRoute = ({ children }) => {
     if (loading) {
       return <div>Đang tải...</div>; // Chờ check token
@@ -151,43 +127,147 @@ function App() {
         }
       />
 
-      {/* Routes cần đăng nhập (Admin) */}
+      {/* --- Dashboard cho admin & moderator --- */}
       <Route
         path="/dashboard"
         element={
           <AdminRoute>
             <div style={styles.container}>
               <div style={styles.header}>
-                <h1 style={styles.title}>Quản lý người dùng</h1>
                 {currentUser && (
                   <div style={styles.userInfo}>
                     <span>
                       Xin chào, <b>{currentUser.name || currentUser.email}</b>
                     </span>
-                    <button style={styles.logoutButton} onClick={handleLogout}>
+
+                    {currentUser.role === "admin" && (
+                      <button
+                        style={styles.logButton}
+                        onClick={() => navigate("/logs")}
+                      >
+                        Nhật ký
+                      </button>
+                    )}
+
+                    <button
+                      style={styles.profileButton}
+                      onClick={() => navigate("/profile")}
+                    >
+                      Trang cá nhân
+                    </button>
+
+                    <button
+                      style={styles.logoutButton}
+                      onClick={handleLogout}
+                    >
                       Đăng xuất
                     </button>
                   </div>
                 )}
+
+                <h1 style={styles.title}>
+                  {currentUser?.role === "admin" ? (
+                    <>
+                      Quản lý người dùng <br /> (Admin)
+                    </>
+                  ) : (
+                    <>
+                      Bảng điều khiển <br /> (Moderator)
+                    </>
+                  )}
+                </h1>
               </div>
 
-              <AddUser onAdd={handleAdd} />
-              <UserList key={refresh} />
+              {currentUser?.role === "admin" && <AddUser onAdd={handleAdd} />}
+
+              <UserList key={refresh} canEdit={currentUser?.role === "admin"} />
             </div>
           </AdminRoute>
         }
       />
+
+      {/* --- Trang log cho Admin --- */}
+      <Route
+        path="/logs"
+        element={
+          <RoleRoute allowedRoles={["admin"]}>
+            <AdminLogs />
+          </RoleRoute>
+        }
+      />
+
+      {/* --- Trang mặc định --- */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
-// Giữ nguyên styles
+// --- 🎨 STYLE ---
 const styles = {
-  container: { position: "relative", fontFamily: "'Inter', sans-serif", padding: "30px" },
-  header: { display: "flex", justifyContent: "center", alignItems: "center", position: "relative", marginBottom: "25px" },
-  title: { textAlign: "center", fontSize: "28px", fontWeight: "700" },
-  userInfo: { display: "flex", alignItems: "center", gap: "10px", position: "absolute", right: "20px", top: "20px" },
-  logoutButton: { background: "linear-gradient(to right, #b91c1c, #f87171)", color: "#fff", border: "none", borderRadius: "9999px", padding: "10px 20px", cursor: "pointer", fontSize: "14px", fontWeight: "500", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", transition: "all 0.25s ease" },
+  container: {
+    position: "relative",
+    fontFamily: "'Inter', sans-serif",
+    padding: "30px",
+  },
+  header: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    marginBottom: "25px",
+  },
+  title: {
+    textAlign: "center",
+    fontSize: "28px",
+    fontWeight: "700",
+    marginTop: "50px", // 🔹 Đẩy chữ thấp hơn hàng nút
+  },
+  userInfo: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: "10px",
+    position: "absolute",
+    top: "0",
+    right: "20px",
+  },
+  logButton: {
+    background: "linear-gradient(to right, #059669, #34d399)",
+    color: "#fff",
+    border: "none",
+    borderRadius: "9999px",
+    padding: "10px 18px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "500",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+    transition: "all 0.25s ease",
+  },
+  profileButton: {
+    background: "linear-gradient(to right, #2563eb, #60a5fa)",
+    color: "#fff",
+    border: "none",
+    borderRadius: "9999px",
+    padding: "10px 18px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "500",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+    transition: "all 0.25s ease",
+  },
+  logoutButton: {
+    background: "linear-gradient(to right, #b91c1c, #f87171)",
+    color: "#fff",
+    border: "none",
+    borderRadius: "9999px",
+    padding: "10px 20px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "500",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+    transition: "all 0.25s ease",
+  },
 };
 
 export default App;
