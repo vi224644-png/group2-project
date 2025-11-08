@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 // import axios from "axios"; 
 import api from "./api"; // ✅ 1. DÙNG 'api' (đã có interceptor)
 import { useNavigate, Link } from "react-router-dom";
+import api from "./api";
 
 function Profile({ currentUser, onLogout }) { // Nhận 'onLogout' từ App.jsx
   const [user, setUser] = useState(currentUser || null); // Lấy user từ props
@@ -33,7 +34,7 @@ function Profile({ currentUser, onLogout }) { // Nhận 'onLogout' từ App.jsx
     }
   };
 
-  // 🔹 Lấy thông tin profile
+  // 🧩 Lấy thông tin người dùng
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -51,7 +52,7 @@ function Profile({ currentUser, onLogout }) { // Nhận 'onLogout' từ App.jsx
     
   }, []);
 
-  // 🔹 Cập nhật thông tin
+  // 🧩 Cập nhật thông tin
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (form.password && form.password !== form.confirmPassword) {
@@ -77,11 +78,13 @@ function Profile({ currentUser, onLogout }) { // Nhận 'onLogout' từ App.jsx
     } catch (error) {
       console.error("Lỗi cập nhật:", error);
       setMessage("❌ Cập nhật thất bại!");
+    } finally {
+      setLoading(false);
     }
     setLoading(false);
   };
 
-  // 🔹 Xóa tài khoản
+  // 🧩 Xóa tài khoản
   const handleDeleteAccount = async () => {
     // ⛔️ Không dùng window.confirm, hãy dùng UI modal
     // const confirmDelete = window.confirm("⚠️ Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác!");
@@ -105,142 +108,168 @@ function Profile({ currentUser, onLogout }) { // Nhận 'onLogout' từ App.jsx
     }
   };
 
+  // 🧩 Quay lại Dashboard
+  const handleBackDashboard = () => {
+    navigate("/dashboard");
+  };
+
   const styles = {
-  container: {
-    background: "#fff",
-    padding: "40px",
-    margin: "40px auto",
-    borderRadius: "20px",
-    boxShadow: "0 12px 30px rgba(0,0,0,0.1)",
-    maxWidth: "500px",
-    fontFamily: "Inter, sans-serif",
-    position: "relative",
-  },
-  logoutBtn: {
-    position: "absolute",
-    top: "20px",
-    right: "20px",
-    background: "linear-gradient(135deg, #ef4444, #f97316)",
-    color: "#fff",
-    border: "none",
-    padding: "10px 18px",
-    borderRadius: "14px",
-    cursor: "pointer",
-    fontWeight: "600",
-    transition: "transform 0.2s, box-shadow 0.3s",
-    boxShadow: "0 4px 12px rgba(239,68,68,0.3)",
-  },
-  title: {
-    textAlign: "center",
-    fontSize: "24px",
-    fontWeight: "700",
-    marginBottom: "20px",
-    color: "#1f2937",
-  },
-  avatar: {
-    width: "120px",
-    height: "120px",
-    borderRadius: "50%",
-    objectFit: "cover",
-    border: "3px solid #3b82f6",
-    display: "block",
-    margin: "0 auto 10px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-  },
-  uploadLink: {
-    textAlign: "center",
-    marginBottom: "20px",
-    fontSize: "14px",
-    color: "#2563eb",
-    cursor: "pointer",
-    textDecoration: "none",
-    display: "block",
-  },
-  label: {
-    display: "block",
-    fontWeight: "600",
-    marginBottom: "6px",
-    color: "#374151",
-  },
-  input: {
-    width: "100%",
-    padding: "12px 14px", // ✅ chỉnh nhẹ cho cân nút
-    marginBottom: "15px",
-    borderRadius: "14px", // ✅ cùng bo góc với nút
-    border: "1px solid #d1d5db",
-    fontSize: "15px",
-    outline: "none",
-    transition: "border 0.2s ease, box-shadow 0.2s ease",
-    boxSizing: "border-box",
-  },
-  button: {
-    width: "100%",
-    padding: "13px", // ✅ khớp chiều cao input
-    background: "linear-gradient(135deg, #4f46e5, #3b82f6)",
-    color: "#fff",
-    border: "none",
-    borderRadius: "14px",
-    fontSize: "15px",
-    fontWeight: "600",
-    cursor: "pointer",
-    opacity: 1,
-    marginTop: "10px",
-    transition: "opacity 0.2s ease, transform 0.1s ease",
-  },
-  cancelBtn: {
-    width: "100%",
-    padding: "13px",
-    background: "#9ca3af",
-    color: "#fff",
-    border: "none",
-    borderRadius: "14px",
-    fontSize: "15px",
-    fontWeight: "600",
-    cursor: "pointer",
-    marginTop: "10px",
-  },
-  deleteBtn: {
-    width: "100%",
-    padding: "13px",
-    background: "linear-gradient(135deg, #dc2626, #ef4444)",
-    color: "#fff",
-    border: "none",
-    borderRadius: "14px",
-    fontSize: "15px",
-    fontWeight: "600",
-    cursor: "pointer",
-    marginTop: "15px",
-    boxShadow: "0 4px 12px rgba(220,38,38,0.3)",
-  },
-  message: {
-    textAlign: "center",
-    marginTop: "10px",
-    fontWeight: "500",
-    color: "green",
-  },
-};
+    container: {
+      background: "#fff",
+      padding: "40px",
+      margin: "40px auto",
+      borderRadius: "20px",
+      boxShadow: "0 12px 30px rgba(0,0,0,0.1)",
+      maxWidth: "500px",
+      fontFamily: "Inter, sans-serif",
+      position: "relative",
+    },
+    topButtons: {
+      position: "absolute",
+      top: "20px",
+      right: "20px",
+      display: "flex",
+      gap: "10px",
+    },
+    backBtn: {
+      background: "linear-gradient(135deg, #10b981, #22c55e)",
+      color: "#fff",
+      border: "none",
+      padding: "10px 18px",
+      borderRadius: "14px",
+      cursor: "pointer",
+      fontWeight: "600",
+      transition: "transform 0.2s, box-shadow 0.3s",
+      boxShadow: "0 4px 12px rgba(16,185,129,0.3)",
+    },
+    logoutBtn: {
+      background: "linear-gradient(135deg, #ef4444, #f97316)",
+      color: "#fff",
+      border: "none",
+      padding: "10px 18px",
+      borderRadius: "14px",
+      cursor: "pointer",
+      fontWeight: "600",
+      transition: "transform 0.2s, box-shadow 0.3s",
+      boxShadow: "0 4px 12px rgba(239,68,68,0.3)",
+    },
+    title: {
+      textAlign: "center",
+      fontSize: "24px",
+      fontWeight: "700",
+      marginBottom: "20px",
+      color: "#1f2937",
+    },
+    avatar: {
+      width: "120px",
+      height: "120px",
+      borderRadius: "50%",
+      objectFit: "cover",
+      border: "3px solid #3b82f6",
+      display: "block",
+      margin: "0 auto 10px",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    },
+    uploadLink: {
+      textAlign: "center",
+      marginBottom: "20px",
+      fontSize: "14px",
+      color: "#2563eb",
+      cursor: "pointer",
+      textDecoration: "none",
+      display: "block",
+    },
+    label: {
+      display: "block",
+      fontWeight: "600",
+      marginBottom: "6px",
+      color: "#374151",
+    },
+    input: {
+      width: "100%",
+      padding: "12px 14px",
+      marginBottom: "15px",
+      borderRadius: "14px",
+      border: "1px solid #d1d5db",
+      fontSize: "15px",
+      outline: "none",
+      transition: "border 0.2s ease, box-shadow 0.2s ease",
+      boxSizing: "border-box",
+    },
+    button: {
+      width: "100%",
+      padding: "13px",
+      background: "linear-gradient(135deg, #4f46e5, #3b82f6)",
+      color: "#fff",
+      border: "none",
+      borderRadius: "14px",
+      fontSize: "15px",
+      fontWeight: "600",
+      cursor: "pointer",
+      opacity: 1,
+      marginTop: "10px",
+      transition: "opacity 0.2s ease, transform 0.1s ease",
+    },
+    cancelBtn: {
+      width: "100%",
+      padding: "13px",
+      background: "#9ca3af",
+      color: "#fff",
+      border: "none",
+      borderRadius: "14px",
+      fontSize: "15px",
+      fontWeight: "600",
+      cursor: "pointer",
+      marginTop: "10px",
+    },
+    deleteBtn: {
+      width: "100%",
+      padding: "13px",
+      background: "linear-gradient(135deg, #dc2626, #ef4444)",
+      color: "#fff",
+      border: "none",
+      borderRadius: "14px",
+      fontSize: "15px",
+      fontWeight: "600",
+      cursor: "pointer",
+      marginTop: "15px",
+      boxShadow: "0 4px 12px rgba(220,38,38,0.3)",
+    },
+    message: {
+      textAlign: "center",
+      marginTop: "10px",
+      fontWeight: "500",
+      color: "green",
+    },
+  };
 
   if (!user)
-    return <p style={{ textAlign: "center", marginTop: "30px" }}>⏳ Đang tải thông tin...</p>;
+    return <p style={{ textAlign: "center", marginTop: "30px" }}>Đang tải thông tin...</p>;
 
   return (
     <div style={styles.container}>
-      <button style={styles.logoutBtn} onClick={handleLogout}>
-        Đăng xuất
-      </button>
+      <div style={styles.topButtons}>
+        {/* ✅ Chỉ admin/moderator mới thấy nút quay lại */}
+        {(user.role === "admin" || user.role === "moderator") && (
+          <button style={styles.backBtn} onClick={handleBackDashboard}>
+            Quay lại Dashboard
+          </button>
+        )}
+        <button style={styles.logoutBtn} onClick={handleLogout}>
+          Đăng xuất
+        </button>
+      </div>
 
-      <h3 style={styles.title}>👤 Thông tin cá nhân</h3>
+      <h3 style={styles.title}>Thông tin cá nhân</h3>
 
-      {/* ✅ Hiển thị avatar */}
       <img
         src={user.avatar || "https://via.placeholder.com/120?text=No+Avatar"}
         alt="Avatar"
         style={styles.avatar}
       />
 
-      {/* ✅ Link chuyển sang upload ảnh */}
       <Link to="/upload-avatar" style={styles.uploadLink}>
-         Chỉnh sửa ảnh đại diện
+        Chỉnh sửa ảnh đại diện
       </Link>
 
       {!editing ? (
@@ -295,7 +324,7 @@ function Profile({ currentUser, onLogout }) { // Nhận 'onLogout' từ App.jsx
           />
 
           <button type="submit" style={styles.button} disabled={loading}>
-            {loading ? "⏳ Đang lưu..." : "Lưu thay đổi"}
+            {loading ? " Đang lưu..." : "Lưu thay đổi"}
           </button>
 
           <button

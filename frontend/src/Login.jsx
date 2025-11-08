@@ -30,12 +30,14 @@ function Login({ setCurrentUser }) {
       setMessage(res.data.message);
 
       setTimeout(() => {
-        if (res.data.user.role === "admin") {
+        const role = res.data.user.role;
+        if (role === "admin" || role === "moderator") {
           navigate("/dashboard");
         } else {
           navigate("/profile");
         }
       }, 500);
+
     } catch (err) {
       setMessage(err.response?.data?.message || "❌ Lỗi đăng nhập");
     }

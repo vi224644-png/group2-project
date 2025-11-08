@@ -8,7 +8,7 @@ const getUsers = async (req, res) => {
     const users = await User.find();
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 
@@ -17,7 +17,9 @@ const addUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "Vui lòng nhập đủ name, email, password" });
+      return res
+        .status(400)
+        .json({ message: "Vui lòng nhập đủ name, email, password" });
     }
 
     const existed = await User.findOne({ email });
@@ -25,10 +27,16 @@ const addUser = async (req, res) => {
       return res.status(409).json({ message: "Email đã tồn tại" });
     }
 
-    // ✅ Hash password trước khi lưu
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({ name, email, password: hashedPassword });
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role: role || "user", // mặc định là user
+    });
+
     await newUser.save();
 
     res.status(201).json(newUser);
@@ -55,7 +63,7 @@ const updateUser = async (req, res) => {
 
     return res.status(200).json(updated);
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error });
+    return res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 
