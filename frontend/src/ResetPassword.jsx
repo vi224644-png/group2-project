@@ -1,38 +1,50 @@
+// Import các thư viện cần thiết
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 
 function ResetPassword() {
+  // Lấy token từ URL (VD: /reset-password/:token)
   const { token } = useParams();
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
 
+  // Các state để lưu dữ liệu form và trạng thái UI
+  const [password, setPassword] = useState(""); // Mật khẩu mới
+  const [showPassword, setShowPassword] = useState(false); // Hiện/ẩn mật khẩu
+  const [message, setMessage] = useState(""); // Thông báo kết quả
+  const [loading, setLoading] = useState(false); // Trạng thái chờ (loading)
+
+  // Hàm xử lý khi người dùng bấm nút "Cập nhật mật khẩu"
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Ngăn reload trang mặc định
     setLoading(true);
     setMessage("");
-    try {
-            // Thay đổi ở đây:
-        const res = await axios.post(
-        `http://localhost:3000/api/reset-password/${token}`,
-        { newPassword: password } // ✅ gửi đúng key mà backend nhận
-        );
 
+    try {
+      // Gửi yêu cầu POST đến API backend, kèm token trong URL và mật khẩu mới
+      const res = await axios.post(
+        `http://localhost:3000/api/reset-password/${token}`,
+        { newPassword: password } // ✅ Khớp với key mà backend mong đợi
+      );
+
+      // Nếu thành công -> hiển thị thông báo màu xanh
       setMessage(res.data.message || "✅ Mật khẩu đã được đặt lại thành công!");
     } catch (error) {
+      // Nếu token sai hoặc hết hạn -> hiển thị lỗi màu đỏ
       setMessage("❌ Token không hợp lệ hoặc đã hết hạn!");
     }
-    setLoading(false);
+
+    setLoading(false); // Tắt trạng thái loading
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h2 style={styles.title}> Đặt lại mật khẩu</h2>
+        {/* Tiêu đề form */}
+        <h2 style={styles.title}>Đặt lại mật khẩu</h2>
 
+        {/* Form nhập mật khẩu mới */}
         <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+          {/* Ô nhập mật khẩu có nút hiện/ẩn */}
           <div style={styles.inputWrapper}>
             <input
               type={showPassword ? "text" : "password"}
@@ -43,14 +55,16 @@ function ResetPassword() {
               style={styles.input}
             />
 
+            {/* Nút hiện/ẩn mật khẩu (icon con mắt) */}
             <button
               type="button"
               aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
               onClick={() => setShowPassword((s) => !s)}
               style={styles.iconButton}
             >
+              {/* Icon SVG thay đổi theo trạng thái showPassword */}
               {showPassword ? (
-                // Eye-off SVG
+                // 👁️‍🗨️ Eye-off (ẩn mật khẩu)
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M3 3l18 18" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M10.58 10.58a3 3 0 0 0 4.24 4.24" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -59,7 +73,7 @@ function ResetPassword() {
                   <path d="M21.5 12c-1.16 2.09-2.96 3.77-5.06 4.7" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               ) : (
-                // Eye SVG
+                // 👁️ Eye (hiện mật khẩu)
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M1.5 12s4-7.5 10.5-7.5S22.5 12 22.5 12s-4 7.5-10.5 7.5S1.5 12 1.5 12z" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                   <circle cx="12" cy="12" r="3" stroke="#374151" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -68,32 +82,46 @@ function ResetPassword() {
             </button>
           </div>
 
-          <button type="submit" style={{ ...styles.button, opacity: loading ? 0.7 : 1 }} disabled={loading}>
-            {loading ? " Đang cập nhật..." : "Cập nhật mật khẩu"}
+          {/* Nút xác nhận đặt lại mật khẩu */}
+          <button
+            type="submit"
+            style={{ ...styles.button, opacity: loading ? 0.7 : 1 }}
+            disabled={loading}
+          >
+            {loading ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
           </button>
         </form>
 
+        {/* Hiển thị thông báo kết quả */}
         {message && (
           <p
-        style={{
-            color: message === "Đặt lại mật khẩu thành công!" || message.includes("✅") ? "#16a34a" : "#dc2626",
-            marginTop: "15px",
-            fontWeight: "500",
-            fontSize: "15px",
-        }}
-        >
-        {message}
-        </p>
+            style={{
+              color:
+                message === "Đặt lại mật khẩu thành công!" ||
+                message.includes("✅")
+                  ? "#16a34a"
+                  : "#dc2626",
+              marginTop: "15px",
+              fontWeight: "500",
+              fontSize: "15px",
+            }}
+          >
+            {message}
+          </p>
         )}
 
+        {/* Liên kết quay lại trang đăng nhập */}
         <p style={{ marginTop: "18px", fontSize: "14px" }}>
-          <Link to="/" style={styles.link}>Quay lại đăng nhập</Link>
+          <Link to="/" style={styles.link}>
+            Quay lại đăng nhập
+          </Link>
         </p>
       </div>
     </div>
   );
 }
 
+// 🎨 CSS nội tuyến cho toàn bộ giao diện
 const styles = {
   container: {
     height: "100vh",
@@ -126,7 +154,7 @@ const styles = {
   },
   input: {
     width: "100%",
-    padding: "14px 46px 14px 16px", // leave space for icon
+    padding: "14px 46px 14px 16px", // chừa chỗ cho icon mắt
     borderRadius: "12px",
     border: "1px solid #e6edf6",
     fontSize: "15px",
