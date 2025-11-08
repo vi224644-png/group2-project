@@ -1,7 +1,10 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+
+const jwt = require("jsonwebtoken");
 const RefreshToken = require("../models/RefreshToken"); 
+
 /* =============================
    🔹 ĐĂNG KÝ (Giữ nguyên)
 ============================= 
@@ -33,7 +36,6 @@ exports.signup = async (req, res) => {
    🔹 ĐĂNG NHẬP (Sửa đổi theo Hoạt động 1)
 ============================= 
 */
-
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -91,7 +93,7 @@ exports.login = async (req, res) => {
 };
 
 /* =============================
-   🔹 ĐĂNG XUẤT (Sửa đổi theo Hoạt động 1)
+🔹 ĐĂNG XUẤT (Sửa đổi theo Hoạt động 1)
 ============================= 
 */
 exports.logout = async (req, res) => {
@@ -177,7 +179,7 @@ exports.forgotPassword = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: "Email không tồn tại!" });
+return res.status(404).json({ message: "Email không tồn tại!" });
     }
 
     // Tạo token reset mật khẩu
@@ -217,4 +219,3 @@ exports.resetPassword = async (req, res) => {
     res.status(400).json({ message: "Token không hợp lệ hoặc đã hết hạn!", error: err.message });
   }
 };
-

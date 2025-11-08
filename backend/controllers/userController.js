@@ -1,30 +1,27 @@
+
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 
-// ✅ GET /users -> Lấy danh sách tất cả user
+// GET /users -> lấy danh sách user từ MongoDB
 const getUsers = async (req, res) => {
   try {
-    // Không trả password ra client
-    const users = await User.find().select("-password");
+    const users = await User.find();
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 
-// ✅ POST /users -> Thêm user mới
+// POST /users -> thêm user mới
 const addUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-
-    // Kiểm tra input
+    const { name, email, password } = req.body;
     if (!name || !email || !password) {
       return res
         .status(400)
         .json({ message: "Vui lòng nhập đủ name, email, password" });
     }
 
-    // Kiểm tra email trùng
     const existed = await User.findOne({ email });
     if (existed) {
       return res.status(409).json({ message: "Email đã tồn tại" });
@@ -42,27 +39,23 @@ const addUser = async (req, res) => {
 
     await newUser.save();
 
-    // Ẩn password trước khi trả về
-    const userResponse = newUser.toObject();
-    delete userResponse.password;
-
-    res.status(201).json(userResponse);
+    res.status(201).json(newUser);
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    res.status(500).json({ message: "Lỗi server", error });
   }
 };
 
-// ✅ PUT /users/:id -> Cập nhật user
+// PUT /users/:id -> cập nhật user trong MongoDB
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role } = req.body;
+    const { name, email } = req.body;
 
     const updated = await User.findByIdAndUpdate(
       id,
-      { name, email, role },
-      { new: true }
-    ).select("-password");
+      { name, email },
+      { new: true } // trả về document mới sau khi update
+    );
 
     if (!updated) {
       return res.status(404).json({ message: "Không tìm thấy user" });
@@ -74,7 +67,8 @@ const updateUser = async (req, res) => {
   }
 };
 
-// ✅ DELETE /users/:id -> Xóa user
+
+// DELETE /users/:id -> Xóa user
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -86,8 +80,9 @@ const deleteUser = async (req, res) => {
 
     return res.status(200).json({ message: "Xóa thành công" });
   } catch (error) {
-    return res.status(500).json({ message: "Lỗi server", error: error.message });
+    return res.status(500).json({ message: "Lỗi server", error });
   }
 };
 
 module.exports = { getUsers, addUser, updateUser, deleteUser };
+
