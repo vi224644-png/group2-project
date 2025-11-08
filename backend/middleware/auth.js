@@ -1,3 +1,4 @@
+
 const jwt = require("jsonwebtoken");
 
 const verifyToken = (req, res, next) => {
@@ -6,7 +7,7 @@ const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // chứa: id, email, role
+    req.user = decoded; // chứa: id, email, isAdmin
     next();
   } catch (err) {
     res.status(403).json({ message: "Token không hợp lệ!" });
@@ -14,10 +15,11 @@ const verifyToken = (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-  if (req.user?.role !== "admin") {
+  if (!req.user?.isAdmin) {
     return res.status(403).json({ message: "Chỉ admin mới được phép truy cập!" });
   }
   next();
 };
 
 module.exports = { verifyToken, isAdmin };
+

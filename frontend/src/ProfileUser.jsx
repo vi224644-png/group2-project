@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from "react";
+// ⛔️ KHÔNG DÙNG axios gốc
+// import axios from "axios"; 
+import api from "./api"; // ✅ 1. DÙNG 'api' (đã có interceptor)
 import { useNavigate, Link } from "react-router-dom";
 import api from "./api";
 
-function Profile({ currentUser, onLogout }) {
-  const [user, setUser] = useState(currentUser || null);
+function Profile({ currentUser, onLogout }) { // Nhận 'onLogout' từ App.jsx
+  const [user, setUser] = useState(currentUser || null); // Lấy user từ props
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  // 🧩 Logout
+  // ⛔️ 2. KHÔNG CẦN LẤY TOKEN THỦ CÔNG
+  // const token = localStorage.getItem("token");
+  
+  // ✅ 3. SỬA HÀM ĐĂNG XUẤT (Giống App.jsx)
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem("refreshToken");
     try {
@@ -18,13 +24,13 @@ function Profile({ currentUser, onLogout }) {
         await api.post("/auth/logout", { refreshToken });
       }
     } catch (err) {
-      console.error("Lỗi khi logout:", err);
+      console.error("Lỗi khi logout trên server:", err);
     } finally {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
-      navigate("/");
-      if (onLogout) onLogout();
+      navigate("/"); // Tốt hơn là gọi onLogout() nếu có
+      if (onLogout) onLogout(); 
     }
   };
 
@@ -32,15 +38,18 @@ function Profile({ currentUser, onLogout }) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await api.get("/profile");
-        setUser(res.data);
+        const res = await api.get("/profile"); 
+        setUser(res.data); // Cập nhật state với data MỚI NHẤT
         setForm({ name: res.data.name, email: res.data.email, password: "", confirmPassword: "" });
       } catch (error) {
         console.error("Lỗi khi lấy profile:", error);
         setMessage("Không thể tải thông tin người dùng!");
       }
     };
-    fetchProfile();
+    
+    // ✅ LUÔN LUÔN GỌI HÀM FETCH KHI VÀO TRANG
+    fetchProfile(); 
+    
   }, []);
 
   // 🧩 Cập nhật thông tin
@@ -58,8 +67,11 @@ function Profile({ currentUser, onLogout }) {
       const updateData = { name: form.name, email: form.email };
       if (form.password) updateData.password = form.password;
 
+      // ✅ 5. DÙNG 'api' VÀ BỎ 'headers'
       const res = await api.put("/profile", updateData);
+
       setUser(res.data.updatedUser);
+      // Cập nhật user trong localStorage
       localStorage.setItem("user", JSON.stringify(res.data.updatedUser));
       setEditing(false);
       setMessage("✅ Cập nhật thành công!");
@@ -69,15 +81,26 @@ function Profile({ currentUser, onLogout }) {
     } finally {
       setLoading(false);
     }
+    setLoading(false);
   };
 
   // 🧩 Xóa tài khoản
   const handleDeleteAccount = async () => {
-    if (!window.confirm("⚠️ Bạn có chắc chắn muốn xóa tài khoản?")) return;
+    // ⛔️ Không dùng window.confirm, hãy dùng UI modal
+    // const confirmDelete = window.confirm("⚠️ Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác!");
+    // if (!confirmDelete) return;
+    
+    // Tạm thời dùng confirm
+    if (!window.confirm("⚠️ Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác!")) {
+        return;
+    }
 
     try {
+      // ✅ 6. DÙNG 'api' VÀ BỎ 'headers'
       await api.delete("/profile");
+      
       alert("Tài khoản đã bị xóa!");
+      // Đăng xuất sau khi xóa
       handleLogout();
     } catch (error) {
       console.error("Lỗi khi xóa tài khoản:", error);
