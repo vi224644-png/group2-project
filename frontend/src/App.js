@@ -1,5 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react"; // ❌ Bỏ useEffect
 import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
+// ❌ Bỏ jwtDecode
+import { useDispatch, useSelector } from "react-redux"; // ✅ Thêm useSelector
+import {
+  // ❌ Bỏ loginSuccess
+  logout as logoutAction,
+} from "./redux/authSlice";
+
+import api from "./api";
 import Login from "./Login";
 import Signup from "./Signup";
 import UserList from "./UserList";
@@ -9,17 +17,23 @@ import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
 import UploadAvatar from "./UploadAvatar";
 import AdminLogs from "./AdminLogs";
-import { jwtDecode } from "jwt-decode";
-import api from "./api"; // ✅ 1. Import 'api' (đã có interceptor)
+import ProtectedRoute from "./ProtectedRoute";
+import RoleRoute from "./RoleRoute";
 
 function App() {
   const [refresh, setRefresh] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null); // State lưu thông tin user
-  const [loading, setLoading] = useState(true); // State chờ load user từ localStorage
+  // ❌ Xóa state: const [currentUser, setCurrentUser] = useState(null);
+  // ❌ Xóa state: const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  // ✅ Lấy user trực tiếp từ Redux store
+  const { user: currentUser } = useSelector((state) => state.auth);
 
   const handleAdd = () => setRefresh(!refresh);
 
+  // 🧹 Đăng xuất (Đã dọn dẹp)
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem("refreshToken");
     
@@ -33,83 +47,32 @@ function App() {
       console.error("Lỗi khi logout trên server (có thể token đã hết hạn):", err);
       // Dù server lỗi, client vẫn phải tiếp tục logout
     } finally {
-      // 2. (SV2) Xóa tất cả thông tin khỏi localStorage
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
+      // ❌ Xóa: ["accessToken", ...].forEach(...)
+      // ❌ Xóa: setCurrentUser(null);
       
-      // 3. Cập nhật state và điều hướng
-      setCurrentUser(null);
-      navigate("/"); // Quay về trang login
+      // ✅ Chỉ cần dispatch và navigate
+      dispatch(logoutAction());
+      navigate("/");
     }
   };
 
-  useEffect(() => {
-    // Đọc 'accessToken' và 'user' từ localStorage
-    const token = localStorage.getItem("accessToken");
-    const userJson = localStorage.getItem("user");
+  // ❌ Xóa: Toàn bộ khối `useEffect` tải user.
+  // `preloadedState` trong `store.js` đã làm việc này rồi.
 
-    if (token && userJson) {
-      try {
-        // Parse dữ liệu user đã lưu
-        const userData = JSON.parse(userJson); 
-        setCurrentUser(userData);
-        
-        // (Nâng cao) Kiểm tra xem AT còn hạn không, nếu không thì interceptor sẽ tự xử lý
-        // Bạn có thể decode AT để lấy 'exp' (expiry time)
-        const decodedToken = jwtDecode(token);
-        const currentTime = Date.now() / 1000;
-        
-        if (decodedToken.exp < currentTime) {
-          console.warn("Access Token đã hết hạn khi load App. Interceptor sẽ tự refresh.");
-          // Interceptor (trong api.js) sẽ tự động xử lý khi có request API tiếp theo
-        }
-
-      } catch (err) {
-        console.error("Dữ liệu user/token không hợp lệ:", err);
-        // Xóa hết nếu dữ liệu hỏng
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-      }
-    }
-    setLoading(false);
-  }, []);
-
-  const RoleRoute = ({ allowedRoles, children }) => {
-    if (loading) return <div>Đang tải...</div>;
-    if (!currentUser) return <Navigate to="/" replace />;
-    if (!allowedRoles.includes(currentUser.role)) {
-      return <Navigate to="/profile" replace />;
-    }
-    return children; // Là admin -> render component
-  };
-
-  const ProtectedRoute = ({ children }) => {
-    if (loading) {
-      return <div>Đang tải...</div>; // Chờ check token
-    }
-    if (!currentUser) {
-      return <Navigate to="/" replace />; // Chưa login, quay về trang login
-    }
-    return children; // Đã login -> render component
-  };
-
-  // Nếu đang loading, chưa render Routes
-  if (loading) {
-    return <div>Đang tải ứng dụng...</div>;
-  }
+  // ❌ Xóa: Khối `if (loading) ...`
 
   return (
     <Routes>
-      {/* Routes công khai */}
-      <Route path="/" element={<Login setCurrentUser={setCurrentUser} />} />
+      {/* --- Công khai --- */}
+      {/* ❌ Xóa prop `setCurrentUser` */}
+      <Route path="/" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Routes cần đăng nhập (User) */}
+      {/* --- Người dùng đã login --- */}
+      {/* ❌ Xóa prop `currentUser` và `loading` */}
       <Route
         path="/profile"
         element={
@@ -128,12 +91,14 @@ function App() {
       />
 
       {/* --- Dashboard cho admin & moderator --- */}
+      {/* ❌ Xóa prop `currentUser` và `loading` */}
       <Route
         path="/dashboard"
         element={
           <AdminRoute>
             <div style={styles.container}>
               <div style={styles.header}>
+                {/* `currentUser` ở đây được lấy từ useSelector ở trên */}
                 {currentUser && (
                   <div style={styles.userInfo}>
                     <span>
@@ -179,7 +144,6 @@ function App() {
               </div>
 
               {currentUser?.role === "admin" && <AddUser onAdd={handleAdd} />}
-
               <UserList key={refresh} canEdit={currentUser?.role === "admin"} />
             </div>
           </AdminRoute>
@@ -187,6 +151,7 @@ function App() {
       />
 
       {/* --- Trang log cho Admin --- */}
+      {/* ❌ Xóa prop `currentUser` và `loading` */}
       <Route
         path="/logs"
         element={
@@ -203,6 +168,7 @@ function App() {
 }
 
 // --- 🎨 STYLE ---
+// (Giữ nguyên style)
 const styles = {
   container: {
     position: "relative",
@@ -221,7 +187,7 @@ const styles = {
     textAlign: "center",
     fontSize: "28px",
     fontWeight: "700",
-    marginTop: "50px", // 🔹 Đẩy chữ thấp hơn hàng nút
+    marginTop: "50px",
   },
   userInfo: {
     display: "flex",
