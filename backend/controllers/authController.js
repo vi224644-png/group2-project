@@ -1,8 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
-
-const jwt = require("jsonwebtoken");
 const RefreshToken = require("../models/RefreshToken"); 
 const logActivity = require("../middleware/logActivity"); // ✅ Ghi log hoạt động
 /* =============================
